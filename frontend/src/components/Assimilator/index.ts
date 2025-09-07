@@ -1,0 +1,1 @@
+export { Assimilator } from './Assimilator';

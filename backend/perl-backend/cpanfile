@@ -1,0 +1,59 @@
+requires 'perl', '5.020';
+
+# Web crawling and HTTP
+requires 'LWP::UserAgent', '>= 6.60';
+requires 'HTTP::Request';
+requires 'HTTP::Response';
+requires 'URI';
+requires 'URI::Escape';
+
+# HTML parsing
+requires 'HTML::TreeBuilder', '>= 5.07';
+requires 'HTML::Element';
+requires 'HTML::Parser';
+
+# JSON handling  
+requires 'JSON::XS', '>= 4.03';
+requires 'JSON::PP';
+
+# Database
+requires 'DBI', '>= 1.643';
+requires 'DBD::SQLite', '>= 1.60';
+
+# Web framework
+requires 'Mojolicious', '>= 9.30';
+
+# Utilities
+requires 'List::Util', '>= 1.60';
+requires 'Scalar::Util';
+requires 'Data::Dumper';
+requires 'File::Spec';
+requires 'File::Path';
+requires 'Time::HiRes';
+
+# Configuration
+requires 'Config::Tiny';
+requires 'YAML::XS';
+
+# Logging
+requires 'Log::Log4perl';
+requires 'Log::Log4perl::Appender::ScreenColoredLevels';
+requires 'Term::ANSIColor';
+
+# Text processing
+requires 'Text::Trim';
+requires 'Encode';
+
+# URL handling
+requires 'URL::Normalize';
+
+on 'test' => sub {
+    requires 'Test::More', '>= 1.302';
+    requires 'Test::Exception';
+    requires 'Test::Deep';
+};
+
+on 'develop' => sub {
+    requires 'Perl::Critic';
+    requires 'Perl::Tidy';
+};

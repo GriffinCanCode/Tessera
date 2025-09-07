@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useSearchArticles } from '../../hooks/useWikiCrawler';
+import { useSearchArticles } from '../../hooks/useTessera';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
 import { BookOpen, Sparkles, Zap, Bot, Brain, Atom, Network, BarChart3, RefreshCw } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
 
 export function Search() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [directTestResult, setDirectTestResult] = useState<any>(null);
 
   console.log('Search component render:', { query, debouncedQuery });
 
@@ -29,19 +27,6 @@ export function Search() {
   }, [query]);
 
   const { data, isLoading, error } = useSearchArticles(debouncedQuery);
-
-  // Direct API test function
-  const testDirectAPI = async () => {
-    console.log('Testing direct API call...');
-    try {
-      const result = await WikiCrawlerAPI.searchArticles('machine learning', 20);
-      console.log('Direct API result:', result);
-      setDirectTestResult(result);
-    } catch (error) {
-      console.error('Direct API error:', error);
-      setDirectTestResult({ error: error instanceof Error ? error.message : 'Unknown error' });
-    }
-  };
 
   return (
     <div className="container-page">
@@ -79,24 +64,6 @@ export function Search() {
             </div>
           </div>
         </div>
-
-        {/* Debug Test Button */}
-        <div className="max-w-3xl mx-auto text-center">
-          <button
-            onClick={testDirectAPI}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            Test Direct API Call
-          </button>
-          {directTestResult && (
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-              <pre className="text-left text-sm overflow-auto">
-                {JSON.stringify(directTestResult, null, 2)}
-              </pre>
-            </div>
-          )}
-        </div>
-
         {/* Search Results */}
         {debouncedQuery ? (
           <SearchResults

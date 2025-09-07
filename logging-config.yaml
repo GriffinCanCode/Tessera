@@ -1,0 +1,260 @@
+# Tessera Unified Logging Configuration
+# Central configuration for all services and languages
+
+# Global logging settings
+global:
+  # Default log level (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
+  level: INFO
+  
+  # Enable colors in console output
+  colors: true
+  
+  # Enable emojis in log messages
+  emojis: true
+  
+  # Log format (structured, simple, json)
+  format: structured
+  
+  # Enable performance metrics logging
+  performance_logging: true
+  
+  # Enable context data in logs
+  context_logging: true
+
+# Service-specific configurations
+services:
+  # Python Backend Services
+  python:
+    data_ingestion:
+      level: INFO
+      file: "logs/data_ingestion.log"
+      max_size: "100MB"
+      backup_count: 5
+      
+    embedding_service:
+      level: INFO
+      file: "logs/embedding_service.log"
+      max_size: "100MB"
+      backup_count: 5
+      
+    gemini_service:
+      level: INFO
+      file: "logs/gemini_service.log"
+      max_size: "100MB"
+      backup_count: 5
+
+  # Perl Backend Services  
+  perl:
+    api_server:
+      level: INFO
+      file: "logs/api_server.log"
+      max_size: "100MB"
+      
+    tessera_core:
+      level: INFO
+      file: "logs/tessera_core.log"
+      max_size: "100MB"
+      
+    crawler:
+      level: INFO
+      file: "logs/crawler.log"
+      max_size: "100MB"
+      
+    knowledge_graph:
+      level: DEBUG
+      file: "logs/knowledge_graph.log"
+      max_size: "100MB"
+
+  # Frontend Services
+  frontend:
+    app:
+      level: INFO
+      console_only: true
+      
+    api_client:
+      level: INFO
+      console_only: true
+      
+    components:
+      level: DEBUG
+      console_only: true
+
+  # R Analytics Services
+  r:
+    graph_analysis:
+      level: INFO
+      file: "logs/r_graph_analysis.log"
+      
+    learning_analytics:
+      level: INFO
+      file: "logs/r_learning_analytics.log"
+      
+    temporal_analysis:
+      level: INFO
+      file: "logs/r_temporal_analysis.log"
+
+# Log categories and their configurations
+categories:
+  # API request/response logging
+  api:
+    level: INFO
+    include_headers: false
+    include_body: false
+    max_body_size: 1000
+    
+  # Database operations
+  database:
+    level: DEBUG
+    include_queries: true
+    include_results: false
+    
+  # Performance metrics
+  performance:
+    level: INFO
+    include_memory: true
+    include_cpu: false
+    threshold_ms: 100
+    
+  # Error tracking
+  errors:
+    level: ERROR
+    include_stack_trace: true
+    include_context: true
+    
+  # User actions
+  user_actions:
+    level: INFO
+    include_session_id: true
+    include_user_agent: false
+    
+  # External API calls
+  external_apis:
+    level: INFO
+    include_request_id: true
+    timeout_warning_ms: 5000
+    
+  # Cache operations
+  cache:
+    level: DEBUG
+    include_hit_rate: true
+    
+  # WebSocket events
+  websocket:
+    level: DEBUG
+    include_connection_id: true
+
+# Output configurations
+outputs:
+  console:
+    enabled: true
+    colors: true
+    format: "structured"
+    
+  file:
+    enabled: true
+    rotation: "daily"
+    compression: true
+    
+  json:
+    enabled: false
+    file: "logs/tessera.json"
+    
+  syslog:
+    enabled: false
+    facility: "local0"
+    
+  elasticsearch:
+    enabled: false
+    host: "localhost:9200"
+    index: "tessera-logs"
+
+# Development vs Production settings
+environments:
+  development:
+    global:
+      level: DEBUG
+      colors: true
+      emojis: true
+    console:
+      enabled: true
+    file:
+      enabled: true
+      
+  production:
+    global:
+      level: INFO
+      colors: false
+      emojis: false
+    console:
+      enabled: false
+    file:
+      enabled: true
+    json:
+      enabled: true
+      
+  testing:
+    global:
+      level: WARN
+      colors: false
+      emojis: false
+    console:
+      enabled: true
+    file:
+      enabled: false
+
+# Security settings
+security:
+  # Fields to redact in logs
+  redact_fields:
+    - password
+    - api_key
+    - token
+    - secret
+    - authorization
+    - cookie
+    
+  # Maximum log file size before rotation
+  max_file_size: "100MB"
+  
+  # Maximum number of log files to keep
+  max_files: 10
+  
+  # Enable log integrity checking
+  integrity_check: false
+
+# Monitoring and alerting
+monitoring:
+  # Enable log monitoring
+  enabled: true
+  
+  # Error rate threshold for alerts
+  error_rate_threshold: 0.05
+  
+  # Response time threshold for alerts (ms)
+  response_time_threshold: 1000
+  
+  # Log volume threshold for alerts (logs/minute)
+  volume_threshold: 1000
+  
+  # Health check interval (seconds)
+  health_check_interval: 60
+
+# Integration settings
+integrations:
+  # Metrics collection
+  metrics:
+    enabled: true
+    provider: "prometheus"
+    endpoint: "/metrics"
+    
+  # Distributed tracing
+  tracing:
+    enabled: false
+    provider: "jaeger"
+    endpoint: "http://localhost:14268/api/traces"
+    
+  # Log aggregation
+  aggregation:
+    enabled: false
+    provider: "fluentd"
+    endpoint: "localhost:24224"

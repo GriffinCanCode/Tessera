@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiLogger, measureAsyncPerformance } from '../utils/logger';
 import type {
   ApiResponse,
   WikiArticle,
@@ -27,6 +28,19 @@ import type {
   ProjectArticlesResponse,
 } from '../types/api';
 
+// Data Ingestion Types
+export interface IngestionResult {
+  success: boolean;
+  content_id?: number;
+  title: string;
+  content_type: string;
+  word_count: number;
+  chunk_count: number;
+  processing_time_seconds: number;
+  error?: string;
+  metadata?: Record<string, unknown>;
+}
+
 // Configure axios instance
 const api = axios.create({
   baseURL: '/api',
@@ -45,7 +59,7 @@ api.interceptors.response.use(
   }
 );
 
-export class WikiCrawlerAPI {
+export class TesseraAPI {
   // Get API information and stats
   static async getInfo(): Promise<ApiResponse<ApiInfo>> {
     const response = await api.get('/');
@@ -60,10 +74,19 @@ export class WikiCrawlerAPI {
 
   // Search for articles
   static async searchArticles(query: string, limit = 20): Promise<ApiResponse<SearchResult>> {
-    const response = await api.get('/search', {
-      params: { q: query, limit },
-    });
-    return response.data;
+    return measureAsyncPerformance('API Search Articles', async () => {
+      apiLogger.logApiRequest('GET', '/search', { query, limit });
+      
+      const response = await api.get('/search', {
+        params: { q: query, limit },
+      });
+      
+      apiLogger.logApiResponse('GET', '/search', response.status, undefined, {
+        results: response.data.data?.length || 0
+      });
+      
+      return response.data;
+    }, apiLogger);
   }
 
   // Get article by title
@@ -74,17 +97,17 @@ export class WikiCrawlerAPI {
 
   // Start crawling
   static async startCrawl(request: CrawlRequest): Promise<ApiResponse<SessionStats>> {
-    console.log('WikiCrawlerAPI.startCrawl called with:', JSON.stringify(request, null, 2));
+    console.log('TesseraAPI.startCrawl called with:', JSON.stringify(request, null, 2));
     console.log('Making POST request to /crawl...');
     
     try {
       const response = await api.post('/crawl', request);
-      console.log('WikiCrawlerAPI.startCrawl SUCCESS - Response received:', response);
+      console.log('TesseraAPI.startCrawl SUCCESS - Response received:', response);
       console.log('Response status:', response.status);
       console.log('Response data:', response.data);
       return response.data;
     } catch (error: unknown) {
-      console.error('WikiCrawlerAPI.startCrawl FAILED:', error);
+      console.error('TesseraAPI.startCrawl FAILED:', error);
       if (axios.isAxiosError(error)) {
         if (error.response) {
           console.error('Error response data:', error.response.data);
@@ -313,17 +336,141 @@ export class WikiCrawlerAPI {
 
   // Start crawling with project context
   static async startCrawlProject(request: CrawlRequest & { project_id?: number }): Promise<ApiResponse<SessionStats>> {
-    console.log('WikiCrawlerAPI.startCrawlProject called with:', JSON.stringify(request, null, 2));
+    console.log('TesseraAPI.startCrawlProject called with:', JSON.stringify(request, null, 2));
     
     try {
       const response = await api.post('/crawl', request);
-      console.log('WikiCrawlerAPI.startCrawlProject SUCCESS - Response received:', response);
+      console.log('TesseraAPI.startCrawlProject SUCCESS - Response received:', response);
       return response.data;
     } catch (error: unknown) {
-      console.error('WikiCrawlerAPI.startCrawlProject FAILED:', error);
+      console.error('TesseraAPI.startCrawlProject FAILED:', error);
       throw error;
     }
   }
+
+  // Learning system endpoints
+  static async getLearningSubjects(): Promise<ApiResponse<{ subjects: Record<string, unknown>[]; count: number }>> {
+    const response = await api.get('/learning/subjects');
+    return response.data;
+  }
+
+  static async getLearningAnalytics(): Promise<ApiResponse<{ 
+    subjects: Record<string, unknown>[]; 
+    brain_stats: {
+      total_knowledge_points: number;
+      dominant_area: string;
+      balance_score: number;
+      growth_rate: number;
+      total_time_minutes: number;
+    };
+    count: number;
+  }>> {
+    const response = await api.get('/learning/analytics');
+    return response.data;
+  }
+
+  static async getLearningContent(subjectId?: number, limit = 50): Promise<ApiResponse<{ content: Record<string, unknown>[]; count: number }>> {
+    const params: Record<string, unknown> = { limit };
+    if (subjectId) {
+      params.subject_id = subjectId;
+    }
+    const response = await api.get('/learning/content', { params });
+    return response.data;
+  }
+
+  static async addLearningContent(content: {
+    title: string;
+    content_type: string;
+    content?: string;
+    url?: string;
+    subjects?: number[];
+    difficulty_level?: number;
+    estimated_time_minutes?: number;
+  }): Promise<ApiResponse<{ content_id: number; message: string }>> {
+    const response = await api.post('/learning/content', content);
+    return response.data;
+  }
+
+  // Data Ingestion Methods
+  static async ingestYoutube(
+    url: string,
+    title?: string,
+    description?: string,
+    project_id?: number
+  ): Promise<IngestionResult> {
+    const formData = new FormData();
+    formData.append('url', url);
+    if (title) formData.append('title', title);
+    if (description) formData.append('description', description);
+    if (project_id) formData.append('project_id', project_id.toString());
+
+    const response = await api.post('/ingest/youtube', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data; // Return the nested data object
+  }
+
+  static async ingestArticle(
+    url: string,
+    title?: string,
+    description?: string,
+    project_id?: number
+  ): Promise<IngestionResult> {
+    const formData = new FormData();
+    formData.append('url', url);
+    if (title) formData.append('title', title);
+    if (description) formData.append('description', description);
+    if (project_id) formData.append('project_id', project_id.toString());
+
+    const response = await api.post('/ingest/article', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
+  static async ingestBook(
+    file: File,
+    title?: string,
+    description?: string,
+    project_id?: number
+  ): Promise<IngestionResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (title) formData.append('title', title);
+    if (description) formData.append('description', description);
+    if (project_id) formData.append('project_id', project_id.toString());
+
+    const response = await api.post('/ingest/book', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
+
+  static async ingestPoetry(
+    text: string,
+    title?: string,
+    description?: string,
+    project_id?: number
+  ): Promise<IngestionResult> {
+    const formData = new FormData();
+    formData.append('text', text);
+    if (title) formData.append('title', title);
+    if (description) formData.append('description', description);
+    if (project_id) formData.append('project_id', project_id.toString());
+
+    const response = await api.post('/ingest/poetry', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  }
 }
 
-export default WikiCrawlerAPI;
+export default TesseraAPI;

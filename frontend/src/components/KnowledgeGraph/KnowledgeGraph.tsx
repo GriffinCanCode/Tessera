@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import WikiCrawlerAPI from '../../services/api';
+import TesseraAPI from '../../services/api';
 import type { KnowledgeGraph as KnowledgeGraphType, KnowledgeGraphNode } from '../../types/api';
 import type * as d3 from 'd3';
 
@@ -200,7 +200,7 @@ function NodeTooltip({ node, x, y, isVisible }: NodeTooltipProps) {
       <div className="flex items-center justify-between text-xs">
         <span className="text-slate-500">Relevance: {Math.round((node.relevance_score || node.importance) * 100)}%</span>
         <a
-          href={WikiCrawlerAPI.getWikipediaUrl(node.title)}
+          href={TesseraAPI.getWikipediaUrl(node.title)}
           target="_blank"
           rel="noopener noreferrer"
           className="text-blue-500 hover:text-blue-600 pointer-events-auto"
@@ -232,7 +232,7 @@ export function KnowledgeGraph() {
   // Query for knowledge graph data
   const { data: graphData, isLoading, error, refetch } = useQuery({
     queryKey: ['knowledge-graph', { minRelevance, maxDepth, centerArticleId }],
-    queryFn: () => WikiCrawlerAPI.buildGraph({
+    queryFn: () => TesseraAPI.buildGraph({
       min_relevance: minRelevance,
       max_depth: maxDepth,
       center_article_id: centerArticleId,
@@ -244,7 +244,7 @@ export function KnowledgeGraph() {
   // Query for R-powered advanced layouts
   const { data: layoutData, isLoading: layoutLoading } = useQuery({
     queryKey: ['graph-layouts', { minRelevance, maxDepth, centerArticleId }],
-    queryFn: () => WikiCrawlerAPI.getGraphLayouts({
+    queryFn: () => TesseraAPI.getGraphLayouts({
       min_relevance: minRelevance,
       max_depth: maxDepth,
       center_article_id: centerArticleId

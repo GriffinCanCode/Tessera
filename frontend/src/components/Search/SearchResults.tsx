@@ -1,5 +1,5 @@
 import { ExternalLink, AlertCircle, FileText, Loader2 } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
+import TesseraAPI from '../../services/api';
 import type { SearchResult, WikiArticle } from '../../types/api';
 
 interface SearchResultsProps {
@@ -73,8 +73,8 @@ export function SearchResults({ query, data, isLoading, error }: SearchResultsPr
 }
 
 function ArticleCard({ article }: { article: WikiArticle }) {
-  const readingTime = WikiCrawlerAPI.estimateReadingTime(article.summary || article.content || '');
-  const wikipediaUrl = WikiCrawlerAPI.getWikipediaUrl(article.title);
+  const readingTime = TesseraAPI.estimateReadingTime(article.summary || article.content || '');
+  const wikipediaUrl = TesseraAPI.getWikipediaUrl(article.title);
 
   const truncateSummary = (text: string, maxLength = 300): string => {
     if (text.length <= maxLength) return text;

@@ -1,0 +1,37 @@
+# Test Configuration for Tessera
+crawler:
+  user_agent: "Tessera/1.0 (Test Mode)"
+  delay_between_requests: 0.1  # Faster for testing
+  max_requests_per_minute: 100
+  timeout: 10
+  max_redirects: 3
+
+wikipedia:
+  base_url: "https://en.wikipedia.org"
+  api_url: "https://en.wikipedia.org/w/api.php"
+  max_depth: 2
+  max_articles_per_session: 10
+
+interests:
+  default: 
+    - "test topic"
+    - "sample interest"
+  min_relevance: 0.2
+  boost_keywords:
+    - "test"
+    - "sample"
+
+database:
+  path: ":memory:"  # In-memory SQLite for tests
+  
+logging:
+  level: "ERROR"  # Suppress logs during tests
+  file: "/tmp/tessera_test.log"
+  
+cache:
+  enabled: false
+  
+api:
+  host: "localhost" 
+  port: 3001  # Different port for tests
+  cors_enabled: true

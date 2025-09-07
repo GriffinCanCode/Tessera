@@ -1,5 +1,5 @@
 #!/bin/bash
-# WikiCrawler API Testing Script
+# Tessera API Testing Script
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -8,7 +8,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}🧪 WikiCrawler API Testing${NC}"
+echo -e "${BLUE}🧪 Tessera API Testing${NC}"
 echo "==============================="
 
 # Function to test an endpoint
@@ -59,7 +59,7 @@ test_endpoint "Gemini Conversations" "http://127.0.0.1:8001/conversations" "200"
 test_endpoint "Embedding Stats" "http://127.0.0.1:8002/stats" "200"
 
 # Test a simple chat if API key is available
-if [ ! -z "$GEMINI_API_KEY" ] || [ -f "../backend/knowledge_bot/.env" ]; then
+if [ ! -z "$GEMINI_API_KEY" ] || [ -f "../backend/python-backend/.env" ]; then
     echo -e "${BLUE}Testing Chat Functionality:${NC}"
     
     # Create a simple chat request

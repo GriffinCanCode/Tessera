@@ -1,12 +1,13 @@
-import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Layout } from './components/Layout/Layout';
-import { Dashboard } from './components/Dashboard/Dashboard';
+import { LearningDashboard } from './components/LearningDashboard';
+import { Brain } from './components/Brain';
 import { Search } from './components/Search/Search';
+import { Assimilator } from './components/Assimilator';
 import { KnowledgeGraph } from './components/KnowledgeGraph';
-import { CrawlManagement } from './components/Crawl';
 import { PersonalInsights } from './components/PersonalInsights';
 import { Notebook } from './components/Notebook';
+import { useAppStore, type ViewType } from './stores';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -28,43 +29,45 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const [currentView, setCurrentView] = useState('dashboard');
+  const { currentView, setCurrentView } = useAppStore();
 
   const handleViewChange = (view: string) => {
-    setCurrentView(view);
+    setCurrentView(view as ViewType);
   };
 
   const renderView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onViewChange={handleViewChange} />;
+        return <LearningDashboard />;
+      case 'brain':
+        return <Brain />;
       case 'search':
         return <Search />;
+      case 'assimilator':
+        return <Assimilator />;
       case 'graph':
         return (
           <div className="container-page">
             <div className="space-y-6">
               <div className="text-center space-y-4">
                 <h1 className="text-4xl font-bold text-gradient bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600">
-                  Knowledge Graph
+                  Learning Graph
                 </h1>
                 <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-                  Explore connections between Wikipedia articles with interactive graph visualization.
-                  Discover patterns, relationships, and knowledge pathways.
+                  Explore connections between your learning subjects with interactive graph visualization.
+                  Discover patterns, relationships, and knowledge pathways across different topics.
                 </p>
               </div>
               <KnowledgeGraph />
             </div>
           </div>
         );
-      case 'crawl':
-        return <CrawlManagement />;
       case 'insights':
         return <PersonalInsights onViewChange={handleViewChange} />;
       case 'notebook':
         return <Notebook />;
       default:
-        return <Dashboard />;
+        return <LearningDashboard />;
     }
   };
 

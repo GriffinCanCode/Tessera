@@ -1,5 +1,5 @@
 {
-  "name": "wikilizer",
+  "name": "tessera",
   "version": "1.0.0",
   "description": "Personal Wikipedia Knowledge Graph Builder",
   "private": true,
@@ -11,13 +11,20 @@
     "build": "cd frontend && npm run build",
     "install-deps": "cd frontend && npm install && npm install concurrently",
     "setup": "npm run install-deps && echo '✅ Setup complete! Run \"npm run dev\" to start both services.'",
-    "clean": "node -e \"const { execSync } = require('child_process'); const processes = ['script/api_server.pl', 'embedding_service.py', 'gemini_service.py', 'vite']; processes.forEach(p => { try { execSync('pkill -f ' + p, { stdio: 'ignore' }); } catch(e) {} }); console.log('✅ Cleaned up all backend and frontend processes');\"",
-    "logs": "tail -f backend/logs/wikicrawler.log",
+    "clean": "node -e \"const { execSync } = require('child_process'); const processes = ['perl-backend/script/api_server.pl', 'embedding_service.py', 'gemini_service.py', 'vite']; processes.forEach(p => { try { execSync('pkill -f ' + p, { stdio: 'ignore' }); } catch(e) {} }); console.log('✅ Cleaned up all backend and frontend processes');\"",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "npm run prepare-bundle && tauri build",
+    "desktop": "npm run tauri:dev",
+    "desktop:build": "npm run tauri:build",
+    "prepare-bundle": "node scripts/prepare-bundle.js",
+    "logs": "tail -f backend/logs/tessera.log",
     "test-apis": "scripts/test-apis.sh",
     "status": "node -e \"const { execSync } = require('child_process'); const ports = [3000, 8001, 8002, 5173]; const running = []; ports.forEach(p => { try { execSync('lsof -ti:' + p, { stdio: 'ignore' }); running.push(p); } catch(e) {} }); if (running.length > 0) { console.log('🟢 Services running on ports:', running.join(', ')); } else { console.log('🔴 No services running'); }\"",
-    "check": "node -e \"const fs = require('fs'); console.log('🔍 Project Status:'); console.log('Perl API script:', fs.existsSync('./backend/script/api_server.pl') ? '✅' : '❌'); console.log('Python services:', fs.existsSync('./backend/knowledge_bot/gemini_service.py') ? '✅' : '❌'); console.log('Frontend deps:', fs.existsSync('./frontend/node_modules') ? '✅' : '❌'); console.log('Config file:', fs.existsSync('./backend/config/crawler.yaml') ? '✅' : '❌'); console.log('Python venv:', fs.existsSync('./backend/knowledge_bot/venv') ? '✅' : '❌');\""
+    "check": "node -e \"const fs = require('fs'); console.log('🔍 Project Status:'); console.log('Perl API script:', fs.existsSync('./backend/perl-backend/script/api_server.pl') ? '✅' : '❌'); console.log('Python services:', fs.existsSync('./backend/python-backend/gemini_service.py') ? '✅' : '❌'); console.log('Frontend deps:', fs.existsSync('./frontend/node_modules') ? '✅' : '❌'); console.log('Config file:', fs.existsSync('./backend/config/crawler.yaml') ? '✅' : '❌'); console.log('Python venv:', fs.existsSync('./backend/python-backend/venv') ? '✅' : '❌');\""
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.8.4",
     "concurrently": "^8.2.2"
   },
   "engines": {

@@ -1,4 +1,4 @@
-import { Search, Database, Network, Settings, Sparkles, Zap, Brain, BookOpen } from 'lucide-react';
+import { Search, TrendingUp, Network, Sparkles, Zap, Brain, GraduationCap, Settings, Lightbulb, Upload } from 'lucide-react';
 
 interface HeaderProps {
   currentView: string;
@@ -9,43 +9,50 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
   const navItems = [
     { 
       id: 'dashboard', 
-      label: 'Dashboard', 
-      icon: Database, 
+      label: 'Learning Dashboard', 
+      icon: TrendingUp, 
       gradient: 'from-blue-500 to-purple-600',
       hoverColor: 'hover:text-blue-600'
     },
     { 
+      id: 'brain', 
+      label: 'Knowledge Brain', 
+      icon: Brain, 
+      gradient: 'from-pink-500 to-purple-600',
+      hoverColor: 'hover:text-pink-600'
+    },
+    { 
       id: 'search', 
-      label: 'Search', 
+      label: 'Search Content', 
       icon: Search, 
       gradient: 'from-purple-500 to-pink-600',
       hoverColor: 'hover:text-purple-600'
     },
     { 
+      id: 'assimilator', 
+      label: 'Data Assimilator', 
+      icon: Upload, 
+      gradient: 'from-orange-500 to-red-600',
+      hoverColor: 'hover:text-orange-600'
+    },
+    { 
       id: 'graph', 
-      label: 'Knowledge Graph', 
+      label: 'Learning Graph', 
       icon: Network, 
       gradient: 'from-teal-500 to-cyan-600',
       hoverColor: 'hover:text-teal-600'
     },
     { 
-      id: 'crawl', 
-      label: 'Crawl', 
-      icon: Settings, 
-      gradient: 'from-orange-500 to-red-600',
-      hoverColor: 'hover:text-orange-600'
-    },
-    { 
       id: 'insights', 
-      label: 'Personal Insights', 
-      icon: Brain, 
-      gradient: 'from-purple-500 to-indigo-600',
-      hoverColor: 'hover:text-purple-600'
+      label: 'Learning Insights', 
+      icon: Lightbulb, 
+      gradient: 'from-yellow-500 to-orange-600',
+      hoverColor: 'hover:text-yellow-600'
     },
     { 
       id: 'notebook', 
-      label: 'Knowledge Bot', 
-      icon: BookOpen, 
+      label: 'Learning Notebook', 
+      icon: GraduationCap, 
       gradient: 'from-green-500 to-emerald-600',
       hoverColor: 'hover:text-green-600'
     },
@@ -82,10 +89,10 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
               
               <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold text-gradient-electric">
-                  Wikilizer
+                  Learning Tracker
                 </h1>
                 <p className="text-sm text-slate-600 font-medium">
-                  Knowledge Graph Builder
+                  Personal Learning Journey
                 </p>
               </div>
             </div>

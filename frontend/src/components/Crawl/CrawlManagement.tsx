@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Rocket, Check, AlertTriangle, Bug, Lightbulb } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
+import TesseraAPI from '../../services/api';
 import type { CrawlRequest } from '../../types/api';
 
 interface CrawlFormProps {
@@ -256,13 +256,13 @@ export function CrawlManagement() {
   // Query current stats
   const { data: stats } = useQuery({
     queryKey: ['stats'],
-    queryFn: WikiCrawlerAPI.getStats,
+    queryFn: TesseraAPI.getStats,
     refetchInterval: 5000 // Refresh every 5 seconds
   });
 
   // Crawl mutation
   const crawlMutation = useMutation({
-    mutationFn: WikiCrawlerAPI.startCrawl,
+    mutationFn: TesseraAPI.startCrawl,
     onSuccess: (data) => {
       setCrawlResult(data.data);
     },

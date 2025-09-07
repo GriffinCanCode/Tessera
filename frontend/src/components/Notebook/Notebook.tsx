@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Lightbulb } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
+import React, { useEffect, useRef } from 'react';
+import { Lightbulb, Globe, Search, X } from 'lucide-react';
+import TesseraAPI from '../../services/api';
 import { ProjectPanel } from '../ProjectPanel';
+import { useNotebookStore } from '../../stores';
 import type { 
-  BotMessage, 
-  ConversationInfo, 
   ChatResponse, 
   KnowledgeQueryResponse 
 } from '../../types/api';
@@ -14,17 +13,34 @@ interface NotebookProps {
 }
 
 const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
-  // State management
-  const [currentConversation, setCurrentConversation] = useState<string>('');
-  const [messages, setMessages] = useState<BotMessage[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [conversations, setConversations] = useState<ConversationInfo[]>([]);
-  const [selectedMode, setSelectedMode] = useState<'chat' | 'knowledge'>('chat');
-  const [temperature, setTemperature] = useState(0.7);
-  const [includeInsights, setIncludeInsights] = useState(true);
-  const [showSettings, setShowSettings] = useState(false);
-  const [currentProjectId, setCurrentProjectId] = useState<number | null>(null);
+  // Get state from store
+  const {
+    currentConversation,
+    messages,
+    inputMessage,
+    isLoading,
+    conversations,
+    selectedMode,
+    temperature,
+    includeInsights,
+    showSettings,
+    currentProjectId,
+    showQuickScrape,
+    scrapeUrl,
+    setCurrentConversation,
+    setMessages,
+    addMessage,
+    setInputMessage,
+    setConversations,
+    setIsLoading,
+    setSelectedMode,
+    setTemperature,
+    setIncludeInsights,
+    setShowSettings,
+    setCurrentProjectId,
+    setShowQuickScrape,
+    setScrapeUrl
+  } = useNotebookStore();
   
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -47,9 +63,19 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
 
   const loadConversations = async () => {
     try {
-      const response = await WikiCrawlerAPI.listConversations();
+      const response = await TesseraAPI.listConversations();
       if (response.success && response.data) {
-        setConversations(response.data.conversations);
+        // Convert API format to store format
+        const formattedConversations = response.data.conversations.map((conv: any) => ({
+          id: conv.conversation_id || conv.id,
+          conversation_id: conv.conversation_id || conv.id,
+          title: conv.title,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          last_activity: conv.last_activity || conv.updated_at,
+          message_count: conv.message_count
+        }));
+        setConversations(formattedConversations);
       }
     } catch (error) {
       console.error('Failed to load conversations:', error);
@@ -58,7 +84,7 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
 
   const createNewConversation = async () => {
     try {
-      const response = await WikiCrawlerAPI.createConversation();
+      const response = await TesseraAPI.createConversation();
       if (response.success && response.data) {
         setCurrentConversation(response.data.conversation_id);
         setMessages([]);
@@ -71,10 +97,19 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
 
   const loadConversationHistory = async (conversationId: string) => {
     try {
-      const response = await WikiCrawlerAPI.getConversationHistory(conversationId);
+      const response = await TesseraAPI.getConversationHistory(conversationId);
       if (response.success && response.data) {
         setCurrentConversation(conversationId);
-        setMessages(response.data.messages);
+        // Convert API messages to store format
+        const formattedMessages = response.data.messages.map((msg: any, index: number) => ({
+          id: `${msg.role}-${conversationId}-${index}`,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+          metadata: msg.metadata,
+          error: msg.error
+        }));
+        setMessages(formattedMessages);
       }
     } catch (error) {
       console.error('Failed to load conversation history:', error);
@@ -84,14 +119,15 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
   const sendMessage = async () => {
     if (!inputMessage.trim() || !currentConversation || isLoading) return;
 
-    const userMessage: BotMessage = {
-      role: 'user',
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user' as const,
       content: inputMessage.trim(),
-      timestamp: new Date().toISOString(),
+      timestamp: new Date(),
     };
 
     // Add user message to UI immediately
-    setMessages(prev => [...prev, userMessage]);
+    addMessage(userMessage);
     setInputMessage('');
     setIsLoading(true);
 
@@ -100,7 +136,7 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
       
       if (selectedMode === 'knowledge') {
         // Use knowledge query endpoint
-        const knowledgeResponse = await WikiCrawlerAPI.knowledgeQuery({
+        const knowledgeResponse = await TesseraAPI.knowledgeQuery({
           query: userMessage.content,
           conversation_id: currentConversation,
           include_recent: true,
@@ -135,7 +171,7 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
           project_id: currentProjectId || undefined,
         };
         
-        const chatResponse = await WikiCrawlerAPI.chatWithBotProject(chatRequest);
+        const chatResponse = await TesseraAPI.chatWithBotProject(chatRequest);
         
         if (chatResponse.success && chatResponse.data) {
           response = chatResponse.data;
@@ -145,13 +181,14 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
       }
 
       // Add bot response
-      const botMessage: BotMessage = {
-        role: 'assistant',
+      const botMessage = {
+        id: `bot-${Date.now()}`,
+        role: 'assistant' as const,
         content: response.message,
-        timestamp: response.timestamp,
+        timestamp: new Date(response.timestamp),
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      addMessage(botMessage);
       
       // Refresh conversations list to update message count
       await loadConversations();
@@ -160,13 +197,15 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
       console.error('Failed to send message:', error);
       
       // Add error message
-      const errorMessage: BotMessage = {
-        role: 'assistant',
+      const errorMessage = {
+        id: `error-${Date.now()}`,
+        role: 'assistant' as const,
         content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(),
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
       
-      setMessages(prev => [...prev, errorMessage]);
+      addMessage(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -174,7 +213,7 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
 
   const deleteConversation = async (conversationId: string) => {
     try {
-      await WikiCrawlerAPI.deleteConversation(conversationId);
+      await TesseraAPI.deleteConversation(conversationId);
       
       // If we deleted the current conversation, create a new one
       if (conversationId === currentConversation) {
@@ -187,6 +226,47 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
     }
   };
 
+  const handleQuickScrape = async () => {
+    if (!scrapeUrl.trim()) return;
+
+    try {
+      // For quick scraping, we just fetch the content without storing it
+      // This is temporary content for the current conversation only
+      const response = await fetch(scrapeUrl);
+      const html = await response.text();
+      
+      // Simple extraction (in a real implementation, you'd use a proper parser)
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const title = doc.querySelector('title')?.textContent || 'Scraped Content';
+      const content = doc.querySelector('body')?.textContent || 'No content found';
+      
+      // Add scraped content as a system message
+      const scrapedMessage = {
+        id: `scraped-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `📄 **Quick Scrape: ${title}**\n\n*URL: ${scrapeUrl}*\n\n${content.slice(0, 2000)}${content.length > 2000 ? '...' : ''}\n\n*Note: This content is temporary and not stored in your knowledge base.*`,
+        timestamp: new Date(),
+      };
+
+      addMessage(scrapedMessage);
+      setScrapeUrl('');
+      setShowQuickScrape(false);
+    } catch (error) {
+      console.error('Quick scrape failed:', error);
+      
+      const errorMessage = {
+        id: `scrape-error-${Date.now()}`,
+        role: 'assistant' as const,
+        content: `❌ Failed to scrape content from ${scrapeUrl}. Please check the URL and try again.`,
+        timestamp: new Date(),
+        error: 'Quick scrape failed'
+      };
+      
+      addMessage(errorMessage);
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -194,9 +274,9 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
     }
   };
 
-  const formatTimestamp = (timestamp?: string) => {
+  const formatTimestamp = (timestamp?: Date | string) => {
     if (!timestamp) return '';
-    const date = new Date(timestamp);
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -217,14 +297,58 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Knowledge Bot</h2>
-            <button
-              onClick={createNewConversation}
-              className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              New Chat
-            </button>
+            <h2 className="text-lg font-semibold text-gray-900">Learning Notebook</h2>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setShowQuickScrape(!showQuickScrape)}
+                className="inline-flex items-center px-2 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                title="Quick scrape content (temporary)"
+              >
+                <Globe className="h-4 w-4" />
+              </button>
+              <button
+                onClick={createNewConversation}
+                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                New Chat
+              </button>
+            </div>
           </div>
+          
+          {/* Quick Scrape Form */}
+          {showQuickScrape && (
+            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium text-amber-800">Quick Scrape</h3>
+                <button
+                  onClick={() => setShowQuickScrape(false)}
+                  className="text-amber-600 hover:text-amber-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="text-xs text-amber-700 mb-2">
+                Temporarily scrape content for this conversation only (not stored)
+              </p>
+              <div className="flex space-x-2">
+                <input
+                  type="url"
+                  value={scrapeUrl}
+                  onChange={(e) => setScrapeUrl(e.target.value)}
+                  placeholder="Enter URL to scrape..."
+                  className="flex-1 px-2 py-1 text-sm border border-amber-300 rounded focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                  onKeyPress={(e) => e.key === 'Enter' && handleQuickScrape()}
+                />
+                <button
+                  onClick={handleQuickScrape}
+                  disabled={!scrapeUrl.trim()}
+                  className="px-2 py-1 bg-amber-600 text-white text-sm rounded hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          )}
           
           {/* Mode Selection */}
           <div className="flex rounded-lg bg-gray-100 p-1 mb-4">
@@ -355,12 +479,12 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
                 </svg>
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {selectedMode === 'chat' ? 'Start a conversation' : 'Ask about your knowledge'}
+                {selectedMode === 'chat' ? 'Start learning' : 'Ask about your knowledge'}
               </h3>
               <p className="text-gray-500 max-w-md mx-auto">
                 {selectedMode === 'chat' 
-                  ? 'Chat with your AI assistant about the Wikipedia articles you\'ve crawled. I can help you explore connections and discover insights.'
-                  : 'Ask specific questions about your knowledge base. I\'ll search through your crawled articles and provide detailed answers with sources.'
+                  ? 'Chat with your AI assistant about your learning content. I can help you understand concepts, track progress, and make connections across subjects.'
+                  : 'Ask specific questions about your learning materials. I\'ll search through your content and provide detailed answers with sources.'
                 }
               </p>
             </div>
@@ -421,8 +545,8 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
                 onKeyPress={handleKeyPress}
                 placeholder={
                   selectedMode === 'chat' 
-                    ? "Chat about your knowledge..." 
-                    : "Ask a question about your knowledge base..."
+                    ? "Chat about your learning..." 
+                    : "Ask a question about your learning materials..."
                 }
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                 rows={Math.min(Math.max(inputMessage.split('\n').length, 1), 4)}
@@ -443,7 +567,7 @@ const Notebook: React.FC<NotebookProps> = ({ className = '' }) => {
           {selectedMode === 'knowledge' && (
             <div className="mt-2 text-xs text-gray-500 flex items-center space-x-1">
               <Lightbulb className="w-3 h-3 text-amber-500" />
-              <span>Knowledge mode searches your crawled articles and provides detailed answers with sources</span>
+              <span>Knowledge mode searches your learning materials and provides detailed answers with sources</span>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import { useStats } from '../../hooks/useWikiCrawler';
+import { useStats } from '../../hooks/useTessera';
 import { KnowledgeInsights, KnowledgeHubs, LiveDiscoveries } from './KnowledgeInsights';
 import { QuickActions } from './QuickActions';
 import { AlertCircle, Loader2, Download, Sparkles } from 'lucide-react';
@@ -31,7 +31,7 @@ export function Dashboard({ onViewChange }: DashboardProps) {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Unable to Load Dashboard</h3>
             <p className="text-gray-600 mb-4">
-              Failed to connect to the WikiCrawler backend. Please ensure the server is running.
+              Failed to connect to the Tessera backend. Please ensure the server is running.
             </p>
             <button 
               onClick={() => window.location.reload()} 

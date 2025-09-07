@@ -1,7 +1,7 @@
 import React from 'react';
 import { Network, Activity, Link, TrendingUp, Laptop, Microscope, BookOpen, User, Globe, Palette, FileText, Sprout, Search } from 'lucide-react';
 import type { DatabaseStats } from '../../types/api';
-import { useKnowledgeHubs, useRecentDiscoveries } from '../../hooks/useWikiCrawler';
+import { useKnowledgeHubs, useRecentDiscoveries } from '../../hooks/useTessera';
 
 interface KnowledgeInsightsProps {
   stats?: DatabaseStats;

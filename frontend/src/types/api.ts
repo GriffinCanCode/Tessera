@@ -1,4 +1,4 @@
-// WikiCrawler API Types
+// Tessera API Types
 
 export interface ApiResponse<T = unknown> {
   success: boolean;

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * WikiCrawler Backend Startup Script
+ * Tessera Backend Startup Script
  * Starts all required services: Python RAG services + Perl API server
  */
 
@@ -38,10 +38,10 @@ class BackendManager {
     async checkPrerequisites() {
         log('blue', 'SETUP', 'Checking prerequisites...');
         
-        // Check if knowledge_bot directory exists
-        const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'knowledge_bot');
+        // Check if python-backend directory exists
+        const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'python-backend');
         if (!fs.existsSync(knowledgeBotPath)) {
-            log('red', 'ERROR', 'backend/knowledge_bot directory not found');
+            log('red', 'ERROR', 'backend/python-backend directory not found');
             process.exit(1);
         }
 
@@ -64,7 +64,7 @@ class BackendManager {
         }
 
         // Check Perl script
-        const perlScript = path.join(__dirname, '..', 'backend', 'script', 'api_server.pl');
+        const perlScript = path.join(__dirname, '..', 'backend', 'perl-backend', 'script', 'api_server.pl');
         if (!fs.existsSync(perlScript)) {
             log('red', 'ERROR', 'Perl API server script not found');
             process.exit(1);
@@ -75,11 +75,11 @@ class BackendManager {
 
     async runSetup() {
         return new Promise((resolve, reject) => {
-            const setupScript = path.join(__dirname, '..', 'backend', 'knowledge_bot', 'setup.py');
+            const setupScript = path.join(__dirname, '..', 'backend', 'python-backend', 'setup.py');
             log('blue', 'SETUP', 'Running Python setup...');
             
             const setup = spawn('python3', [setupScript], {
-                cwd: path.join(__dirname, '..', 'backend', 'knowledge_bot'),
+                cwd: path.join(__dirname, '..', 'backend', 'python-backend'),
                 stdio: 'inherit'
             });
 
@@ -97,7 +97,7 @@ class BackendManager {
 
     async startEmbeddingService() {
         return new Promise((resolve) => {
-            const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'knowledge_bot');
+            const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'python-backend');
             
             log('blue', 'EMBED', 'Starting Embedding Service on port 8002...');
             
@@ -137,7 +137,7 @@ class BackendManager {
 
     async startGeminiService() {
         return new Promise((resolve) => {
-            const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'knowledge_bot');
+            const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'python-backend');
             
             log('blue', 'GEMINI', 'Starting Gemini Service on port 8001...');
             
@@ -175,13 +175,53 @@ class BackendManager {
         });
     }
 
+    async startDataIngestionService() {
+        return new Promise((resolve) => {
+            const knowledgeBotPath = path.join(__dirname, '..', 'backend', 'python-backend');
+            
+            log('blue', 'INGEST', 'Starting Data Ingestion Service on port 8003...');
+            
+            const ingestionService = spawn('bash', ['-c', 'source venv/bin/activate && python3 data_ingestion_service.py'], {
+                cwd: knowledgeBotPath,
+                stdio: 'pipe',
+                env: { ...process.env, GEMINI_API_KEY: process.env.GEMINI_API_KEY || '' }
+            });
+
+            this.processes.ingestion = ingestionService;
+
+            ingestionService.stdout.on('data', (data) => {
+                const output = data.toString().trim();
+                if (output) log('cyan', 'INGEST', output);
+            });
+
+            ingestionService.stderr.on('data', (data) => {
+                const output = data.toString().trim();
+                if (output && !output.includes('WARNING')) {
+                    log('yellow', 'INGEST', output);
+                }
+            });
+
+            ingestionService.on('close', (code) => {
+                if (!this.isShuttingDown) {
+                    log('red', 'INGEST', `Service exited with code ${code}`);
+                }
+            });
+
+            // Wait a moment for service to start
+            setTimeout(() => {
+                log('green', 'INGEST', 'Data Ingestion service started');
+                resolve();
+            }, 3000);
+        });
+    }
+
     async startPerlAPIServer() {
         return new Promise((resolve) => {
             const backendPath = path.join(__dirname, '..', 'backend');
             
             log('blue', 'PERL', 'Starting Perl API Server on port 3000...');
             
-            const perlServer = spawn('perl', ['script/api_server.pl'], {
+            const perlServer = spawn('perl', ['perl-backend/script/api_server.pl'], {
                 cwd: backendPath,
                 stdio: 'pipe'
             });
@@ -220,6 +260,7 @@ class BackendManager {
         const services = [
             { name: 'Embedding Service', url: 'http://127.0.0.1:8002/health', color: 'cyan' },
             { name: 'Gemini Service', url: 'http://127.0.0.1:8001/health', color: 'magenta' },
+            { name: 'Data Ingestion Service', url: 'http://127.0.0.1:8003/health', color: 'cyan' },
             { name: 'Perl API Server', url: 'http://127.0.0.1:3000/health', color: 'green' }
         ];
 
@@ -250,12 +291,13 @@ class BackendManager {
 
     showUsageInfo() {
         console.log(`
-${colors.blue}📚 WikiCrawler Backend Services${colors.reset}
+${colors.blue}📚 Tessera Backend Services${colors.reset}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${colors.cyan}🔗 Service URLs:${colors.reset}
-  • Perl API Server:    http://127.0.0.1:3000
-  • Gemini Service:     http://127.0.0.1:8001 (+ /docs for API)
-  • Embedding Service:  http://127.0.0.1:8002 (+ /docs for API)
+  • Perl API Server:      http://127.0.0.1:3000
+  • Gemini Service:       http://127.0.0.1:8001 (+ /docs for API)
+  • Embedding Service:    http://127.0.0.1:8002 (+ /docs for API)
+  • Data Ingestion:       http://127.0.0.1:8003 (+ /docs for API)
 
 ${colors.green}✨ Ready for frontend connection!${colors.reset}
 ${colors.yellow}💡 Press Ctrl+C to stop all services${colors.reset}
@@ -291,13 +333,14 @@ ${colors.yellow}💡 Press Ctrl+C to stop all services${colors.reset}
 
     async start() {
         try {
-            log('blue', 'START', '🚀 Starting WikiCrawler Backend Services...');
+            log('blue', 'START', '🚀 Starting Tessera Backend Services...');
             
             await this.checkPrerequisites();
             
             // Start services in order
             await this.startEmbeddingService();
             await this.startGeminiService();
+            await this.startDataIngestionService();
             await this.startPerlAPIServer();
             
             // Wait a bit more for all services to stabilize

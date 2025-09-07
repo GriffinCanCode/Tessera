@@ -8,7 +8,7 @@ import {
   Trash2,
   Users
 } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
+import TesseraAPI from '../../services/api';
 import type { Project } from '../../types/api';
 
 interface ProjectPanelProps {
@@ -163,7 +163,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
   const loadProjects = async () => {
     try {
       setLoading(true);
-      const response = await WikiCrawlerAPI.listProjects();
+      const response = await TesseraAPI.listProjects();
       if (response.success && response.data) {
         setProjects(response.data.projects);
         
@@ -182,7 +182,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
 
   const createProject = async (projectData: Partial<Project>) => {
     try {
-      const response = await WikiCrawlerAPI.createProject(projectData);
+      const response = await TesseraAPI.createProject(projectData);
       if (response.success && response.data) {
         await loadProjects();
         onProjectChange(response.data.project.id);
@@ -198,7 +198,7 @@ const ProjectPanel: React.FC<ProjectPanelProps> = ({
     }
 
     try {
-      const response = await WikiCrawlerAPI.deleteProject(projectId);
+      const response = await TesseraAPI.deleteProject(projectId);
       if (response.success) {
         await loadProjects();
         

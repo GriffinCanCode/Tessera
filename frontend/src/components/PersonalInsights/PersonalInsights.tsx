@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Activity
 } from 'lucide-react';
-import WikiCrawlerAPI from '../../services/api';
+import TesseraAPI from '../../services/api';
 
 interface PersonalInsightsProps {
   onViewChange?: (view: string) => void;
@@ -26,14 +26,14 @@ export function PersonalInsights({ onViewChange }: PersonalInsightsProps) {
   // Fetch insights data
   const { data: insightsData, isLoading: insightsLoading } = useQuery({
     queryKey: ['knowledge-insights', minRelevance],
-    queryFn: () => WikiCrawlerAPI.getKnowledgeInsights(minRelevance),
+    queryFn: () => TesseraAPI.getKnowledgeInsights(minRelevance),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   // Fetch temporal analysis
   const { data: temporalData, isLoading: temporalLoading } = useQuery({
     queryKey: ['temporal-analysis', minRelevance],
-    queryFn: () => WikiCrawlerAPI.getTemporalAnalysis(minRelevance),
+    queryFn: () => TesseraAPI.getTemporalAnalysis(minRelevance),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 

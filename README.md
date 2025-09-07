@@ -1,4 +1,4 @@
-# WikiCrawler - Personal Wikipedia Knowledge Graph Builder
+# Tessera - Personal Wikipedia Knowledge Graph Builder
 
 A modern Perl-based backend for crawling Wikipedia, following personalized interests, and building knowledge graphs.
 
@@ -22,12 +22,12 @@ cpanm --installdeps .
 perl script/setup_database.pl
 
 # Start the crawler
-perl bin/wikicrawler
+perl bin/tessera
 ```
 
 ## Architecture
 
-- `lib/WikiCrawler/` - Core modules
+- `lib/Tessera/` - Core modules
 - `bin/` - Executable scripts
 - `script/` - Utility scripts
 - `t/` - Tests
@@ -41,5 +41,5 @@ perl bin/wikicrawler
 perl script/api_server.pl
 
 # Run crawler with interests
-perl bin/wikicrawler --interests="artificial intelligence,machine learning"
+perl bin/tessera --interests="artificial intelligence,machine learning"
 ```
