@@ -5,7 +5,19 @@ import path from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(), 
+    tailwindcss(),
+    // Plugin to handle GLSL shader files
+    {
+      name: 'glsl-loader',
+      transform(code, id) {
+        if (id.endsWith('.glsl') || id.endsWith('.vert') || id.endsWith('.frag')) {
+          return `export default ${JSON.stringify(code)};`;
+        }
+      }
+    }
+  ],
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, './src'),
@@ -25,6 +37,12 @@ export default defineConfig({
       overlay: true, // Show build errors in overlay
     },
     proxy: {
+      // Ingestion endpoints go to Python service on port 8003
+      '/ingest': {
+        target: 'http://localhost:8003',
+        changeOrigin: true,
+      },
+      // All other API endpoints go to Perl service on port 3000
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,

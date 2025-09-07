@@ -1,0 +1,253 @@
+# Tessera Perl Benchmarks Configuration
+# This file contains configuration settings for the benchmark suite
+
+# Global benchmark settings
+global:
+  # Default number of iterations for timing tests
+  default_iterations: 3
+  
+  # Minimum runtime for each benchmark (seconds)
+  min_runtime: 2
+  
+  # Maximum runtime for each benchmark (seconds) 
+  max_runtime: 30
+  
+  # Memory profiling settings
+  memory_profiling:
+    enabled: true
+    sample_interval: 1000  # operations between memory samples
+  
+  # Output settings
+  output:
+    precision: 4  # decimal places for timing
+    show_memory: true
+    show_complexity: true
+
+# Database settings for benchmarks
+database:
+  # Use in-memory SQLite for speed
+  driver: "SQLite"
+  database: ":memory:"
+  
+  # Connection settings
+  connection:
+    AutoCommit: 1
+    RaiseError: 1
+    PrintError: 0
+
+# Logging configuration for benchmarks
+logging:
+  # Reduce logging during benchmarks for performance
+  level: "ERROR"
+  appenders:
+    - class: "Log::Log4perl::Appender::Screen"
+      layout: "Log::Log4perl::Layout::SimpleLayout"
+
+# KnowledgeGraph benchmark settings
+knowledgegraph:
+  # Test dataset sizes
+  datasets:
+    small:
+      articles: 50
+      links_per_article: 10
+      max_depth: 2
+    medium:
+      articles: 200
+      links_per_article: 15
+      max_depth: 3
+    large:
+      articles: 500
+      links_per_article: 20
+      max_depth: 3
+  
+  # R integration settings
+  r_integration:
+    # Skip R tests if R is not available
+    skip_on_failure: true
+    # Timeout for R operations (seconds)
+    timeout: 60
+  
+  # Cache settings for testing
+  cache:
+    enabled: true
+    max_entries: 100
+    ttl_seconds: 3600
+
+# LinkAnalyzer benchmark settings
+linkanalyzer:
+  # Test dataset sizes
+  datasets:
+    small:
+      links: 100
+      interests: 5
+      boost_keywords: 3
+    medium:
+      links: 500
+      interests: 10
+      boost_keywords: 8
+    large:
+      links: 2000
+      interests: 20
+      boost_keywords: 15
+  
+  # Interest matching settings
+  interests:
+    default:
+      - "programming"
+      - "algorithms"
+      - "mathematics"
+      - "computer science"
+      - "artificial intelligence"
+    boost_keywords:
+      - "advanced"
+      - "expert"
+      - "professional"
+      - "research"
+      - "academic"
+    min_relevance: 0.3
+
+# Parser benchmark settings
+parser:
+  # HTML complexity levels for testing
+  complexity_levels:
+    simple:
+      sections: 2
+      links_per_section: 5
+      images: 1
+      categories: 2
+    medium:
+      sections: 6
+      links_per_section: 10
+      images: 3
+      categories: 5
+    complex:
+      sections: 12
+      links_per_section: 20
+      images: 8
+      categories: 10
+  
+  # Content generation settings
+  content:
+    min_paragraph_length: 100
+    max_paragraph_length: 500
+    words_per_chunk: 150
+  
+  # Chunking settings for RAG
+  chunking:
+    max_chunk_size: 800
+    min_chunk_size: 50
+    overlap_size: 50
+
+# API Server benchmark settings
+apiserver:
+  # Test dataset sizes
+  datasets:
+    small:
+      content_items: 50
+      subjects: 5
+    medium:
+      content_items: 200
+      subjects: 10
+    large:
+      content_items: 1000
+      subjects: 25
+  
+  # Content weight calculation settings
+  content_weight:
+    base_weight: 1.0
+    length_baseline: 1000  # characters
+    type_factors:
+      book: 2.0
+      course: 1.8
+      article: 1.0
+      video: 0.8
+      youtube: 0.6
+      text: 0.4
+      poetry: 0.3
+  
+  # Learning analytics settings
+  analytics:
+    completion_threshold: 100  # percentage
+    time_window_days: 7
+    growth_rate_multiplier: 2.5
+
+# Performance thresholds for regression detection
+performance_thresholds:
+  # Warn if performance degrades by more than this percentage
+  warning_threshold: 10.0
+  
+  # Fail if performance degrades by more than this percentage
+  failure_threshold: 25.0
+  
+  # Minimum operations per second for critical operations
+  minimum_ops_per_sec:
+    content_weight_calculation: 1000
+    relevance_calculation: 500
+    graph_building: 10
+    parsing_complete: 50
+
+# Comparison settings
+comparison:
+  # Number of previous results to keep for trending
+  history_size: 10
+  
+  # Statistical significance testing
+  significance_testing:
+    enabled: true
+    confidence_level: 0.95
+    min_samples: 5
+
+# Reporting settings
+reporting:
+  # Include system information in reports
+  include_system_info: true
+  
+  # Generate charts and graphs
+  generate_charts: false
+  
+  # Email notifications (if configured)
+  notifications:
+    enabled: false
+    smtp_server: ""
+    recipients: []
+    
+  # Report formats to generate
+  formats:
+    - text
+    - json
+    - html
+
+# Development and debugging settings
+development:
+  # Enable detailed timing breakdown
+  detailed_timing: false
+  
+  # Profile memory usage
+  memory_profiling: false
+  
+  # Generate flame graphs (requires Devel::NYTProf)
+  flame_graphs: false
+  
+  # Save intermediate results for debugging
+  save_intermediate: false
+
+# Environment-specific overrides
+environments:
+  ci:
+    # Faster settings for CI/CD
+    global:
+      default_iterations: 2
+      min_runtime: 1
+      max_runtime: 10
+    datasets:
+      # Smaller datasets for CI
+      small_only: true
+  
+  production:
+    # More thorough testing for production validation
+    global:
+      default_iterations: 5
+      min_runtime: 5
+    performance_thresholds:
+      warning_threshold: 5.0
+      failure_threshold: 15.0

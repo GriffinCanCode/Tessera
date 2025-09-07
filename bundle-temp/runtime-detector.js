@@ -13,7 +13,8 @@ class RuntimeDetector {
         this.availableRuntimes = {
             perl: false,
             python: false,
-            r: false
+            r: false,
+            zig: false
         };
     }
 
@@ -36,6 +37,12 @@ class RuntimeDetector {
             this.availableRuntimes.r = true;
         } catch (e) {}
 
+        // Check Zig
+        try {
+            execSync('zig version', { stdio: 'ignore' });
+            this.availableRuntimes.zig = true;
+        } catch (e) {}
+
         return this.availableRuntimes;
     }
 
@@ -52,6 +59,10 @@ class RuntimeDetector {
             this.startPerlService();
         }
         
+        if (runtimes.zig) {
+            this.buildZigLibraries();
+        }
+        
         return runtimes;
     }
 
@@ -63,6 +74,19 @@ class RuntimeDetector {
     startPerlService() {
         // Implementation will be added by Tauri backend
         console.log('Starting Perl service...');
+    }
+
+    buildZigLibraries() {
+        console.log('Building Zig performance libraries...');
+        try {
+            execSync('zig build', { 
+                cwd: path.join(__dirname, 'backend', 'zig-backend'),
+                stdio: 'inherit' 
+            });
+            console.log('✅ Zig libraries built successfully');
+        } catch (e) {
+            console.log('❌ Failed to build Zig libraries:', e.message);
+        }
     }
 }
 

@@ -139,23 +139,13 @@ analyze_progress <- function(data) {
 # Cluster content based on similarity
 cluster_content <- function(data) {
     content <- data$content
-    embeddings <- data$embeddings
     
-    if (is.null(content) || length(content) < 2) {
-        return(list(
-            clusters = list(),
-            cluster_analysis = list(),
-            similarity_matrix = list()
-        ))
+    if (is.null(content) || length(content) < 3) {
+        return(list(clusters = list(), method = "insufficient_data"))
     }
     
-    # If embeddings are available, use them for clustering
-    if (!is.null(embeddings) && length(embeddings) > 0) {
-        return(cluster_by_embeddings(content, embeddings))
-    }
-    
-    # Otherwise, cluster by metadata (subjects, difficulty, type)
-    return(cluster_by_metadata(content))
+    # Use TF-IDF text similarity for clustering
+    return(cluster_by_tfidf(content))
 }
 
 # Cluster content using embeddings
@@ -249,55 +239,86 @@ cluster_by_metadata <- function(content) {
     return(list(clusters = list(), method = "insufficient_data"))
 }
 
-# Calculate learning velocity
+# Calculate learning velocity based on relative knowledge depth changes
 calculate_velocity <- function(data) {
-    progress <- data$progress
+    content <- data$content
     
-    if (is.null(progress) || length(progress) < 2) {
+    if (is.null(content) || length(content) < 2) {
         return(list(
-            daily_velocity = 0,
-            weekly_velocity = 0,
-            acceleration = 0,
-            trend = "insufficient_data"
+            knowledge_velocity = 0,
+            trend = "insufficient_data",
+            consistency = 0
         ))
     }
     
-    # Sort progress by date
-    progress_sorted <- progress[order(sapply(progress, function(p) p$session_date))]
+    # Calculate content weights and relative knowledge depth
+    weights <- sapply(content, calculate_content_weight)
+    consumed_weights <- weights * (sapply(content, function(c) c$completion_percentage %||% 0) / 100)
     
-    # Calculate daily progress
-    dates <- as.Date(sapply(progress_sorted, function(p) as.POSIXct(p$session_date, origin="1970-01-01")))
-    progress_deltas <- sapply(progress_sorted, function(p) p$progress_delta %||% 0)
+    # Group by subject and calculate relative knowledge depth (RKD)
+    subjects <- unique(sapply(content, function(c) c$subject_id %||% "unknown"))
+    rkd_by_subject <- list()
     
-    # Group by date and sum progress
-    daily_progress <- aggregate(progress_deltas, by = list(dates), FUN = sum)
-    
-    if (nrow(daily_progress) < 2) {
-        return(list(daily_velocity = mean(progress_deltas), weekly_velocity = sum(progress_deltas), acceleration = 0))
+    for (subject in subjects) {
+        subject_content <- content[sapply(content, function(c) (c$subject_id %||% "unknown") == subject)]
+        subject_weights <- weights[sapply(content, function(c) (c$subject_id %||% "unknown") == subject)]
+        subject_consumed <- consumed_weights[sapply(content, function(c) (c$subject_id %||% "unknown") == subject)]
+        
+        # Relative Knowledge Depth = consumed_weight / total_available_weight
+        rkd <- sum(subject_consumed) / sum(subject_weights)
+        rkd_by_subject[[subject]] <- rkd
     }
     
-    # Calculate velocity metrics
-    daily_velocity <- mean(daily_progress$x)
-    weekly_velocity <- daily_velocity * 7
+    # Calculate overall knowledge velocity (average RKD across subjects)
+    knowledge_velocity <- mean(unlist(rkd_by_subject))
     
-    # Calculate acceleration (change in velocity over time)
-    if (nrow(daily_progress) >= 3) {
-        recent_velocity <- mean(tail(daily_progress$x, 3))
-        older_velocity <- mean(head(daily_progress$x, 3))
-        acceleration <- recent_velocity - older_velocity
-    } else {
-        acceleration <- 0
-    }
+    # Determine trend based on completion distribution
+    completions <- sapply(content, function(c) c$completion_percentage %||% 0)
+    high_completion <- sum(completions > 70) / length(completions)
     
-    # Determine trend
-    trend <- if (acceleration > 0.5) "accelerating" else if (acceleration < -0.5) "decelerating" else "stable"
+    trend <- if (high_completion > 0.6) "accelerating" 
+             else if (high_completion > 0.3) "steady" 
+             else "building"
+    
+    # Calculate consistency (how evenly distributed learning is across subjects)
+    consistency <- 1 - (sd(unlist(rkd_by_subject)) / mean(unlist(rkd_by_subject)))
+    consistency <- max(0, min(1, consistency))  # Clamp to [0,1]
     
     return(list(
-        daily_velocity = daily_velocity,
-        weekly_velocity = weekly_velocity,
-        acceleration = acceleration,
-        trend = trend
+        knowledge_velocity = knowledge_velocity,
+        trend = trend,
+        consistency = consistency,
+        subject_depths = rkd_by_subject
     ))
+}
+
+# Calculate content weight based on length and complexity
+calculate_content_weight <- function(content_item) {
+    # Base weight
+    base_weight <- 1.0
+    
+    # Length factor (log scale to prevent huge articles from dominating)
+    content_length <- nchar(content_item$content %||% content_item$summary %||% "")
+    if (content_length == 0) content_length <- 100  # Default for empty content
+    
+    length_factor <- log(content_length + 1) / log(1000)  # Normalized to ~1000 char baseline
+    
+    # Difficulty factor
+    difficulty_factor <- (content_item$difficulty_level %||% 3) / 3.0
+    
+    # Content type factor
+    type_factor <- switch(content_item$content_type %||% "article",
+        "book" = 2.0,
+        "course" = 1.8,
+        "article" = 1.0,
+        "video" = 0.8,
+        "youtube" = 0.6,
+        "text" = 0.4,
+        "poetry" = 0.3,
+        1.0  # default
+    )
+    
+    return(base_weight * length_factor * difficulty_factor * type_factor)
 }
 
 # Identify knowledge gaps
@@ -550,10 +571,151 @@ create_empty_analysis <- function() {
         subject_analysis = list(total_subjects = 0),
         progress_analysis = list(total_sessions = 0),
         content_clustering = list(clusters = list()),
-        learning_velocity = list(daily_velocity = 0),
+        learning_velocity = list(knowledge_velocity = 0),
         knowledge_gaps = list(gaps = list()),
         recommendations = list(recommendations = list())
     ), auto_unbox = TRUE))
+}
+
+# Cluster content by TF-IDF text similarity
+cluster_by_tfidf <- function(content) {
+    # Extract text content for analysis
+    texts <- sapply(content, function(c) {
+        text <- paste(c$title %||% "", c$summary %||% "", c$content %||% "", collapse = " ")
+        # Clean and normalize text
+        text <- tolower(gsub("[^a-zA-Z0-9\\s]", " ", text))
+        text <- gsub("\\s+", " ", text)
+        return(trimws(text))
+    })
+    
+    # Filter out empty texts
+    valid_indices <- which(nchar(texts) > 10)
+    if (length(valid_indices) < 3) {
+        return(list(clusters = list(), method = "insufficient_text"))
+    }
+    
+    texts <- texts[valid_indices]
+    valid_content <- content[valid_indices]
+    
+    tryCatch({
+        # Simple TF-IDF implementation
+        all_words <- unique(unlist(strsplit(texts, "\\s+")))
+        all_words <- all_words[nchar(all_words) > 2]  # Filter short words
+        
+        if (length(all_words) < 5) {
+            return(list(clusters = list(), method = "insufficient_vocabulary"))
+        }
+        
+        # Calculate TF-IDF matrix
+        tfidf_matrix <- calculate_tfidf_matrix(texts, all_words)
+        
+        # Calculate cosine similarity
+        similarity_matrix <- calculate_cosine_similarity(tfidf_matrix)
+        
+        # Convert similarity to distance for clustering
+        distance_matrix <- 1 - similarity_matrix
+        
+        # Hierarchical clustering
+        k <- min(3, length(valid_content) - 1)
+        hc <- hclust(as.dist(distance_matrix), method = "ward.D2")
+        cluster_assignments <- cutree(hc, k = k)
+        
+        # Group content by cluster
+        clustered_content <- list()
+        for (i in 1:k) {
+            cluster_items <- valid_content[cluster_assignments == i]
+            cluster_similarities <- similarity_matrix[cluster_assignments == i, cluster_assignments == i]
+            avg_similarity <- mean(cluster_similarities[upper.tri(cluster_similarities)])
+            
+            clustered_content[[paste0("cluster_", i)]] <- list(
+                items = cluster_items,
+                size = sum(cluster_assignments == i),
+                avg_similarity = ifelse(is.na(avg_similarity), 0, avg_similarity),
+                coherence = calculate_cluster_coherence(cluster_items)
+            )
+        }
+        
+        return(list(
+            clusters = clustered_content, 
+            method = "tfidf_hierarchical", 
+            k = k,
+            overall_similarity = mean(similarity_matrix[upper.tri(similarity_matrix)])
+        ))
+        
+    }, error = function(e) {
+        return(list(clusters = list(), method = "error", error = e$message))
+    })
+}
+
+# Calculate TF-IDF matrix
+calculate_tfidf_matrix <- function(texts, vocabulary) {
+    n_docs <- length(texts)
+    n_terms <- length(vocabulary)
+    
+    tfidf_matrix <- matrix(0, nrow = n_docs, ncol = n_terms)
+    colnames(tfidf_matrix) <- vocabulary
+    
+    # Calculate TF-IDF for each document
+    for (i in 1:n_docs) {
+        words <- unlist(strsplit(texts[i], "\\s+"))
+        word_counts <- table(words)
+        
+        for (j in 1:n_terms) {
+            term <- vocabulary[j]
+            tf <- as.numeric(word_counts[term]) / length(words)
+            tf[is.na(tf)] <- 0
+            
+            # Document frequency
+            df <- sum(sapply(texts, function(text) grepl(paste0("\\b", term, "\\b"), text)))
+            idf <- log(n_docs / (df + 1))
+            
+            tfidf_matrix[i, j] <- tf * idf
+        }
+    }
+    
+    return(tfidf_matrix)
+}
+
+# Calculate cosine similarity between documents
+calculate_cosine_similarity <- function(matrix) {
+    n <- nrow(matrix)
+    similarity <- matrix(0, nrow = n, ncol = n)
+    
+    for (i in 1:n) {
+        for (j in 1:n) {
+            if (i == j) {
+                similarity[i, j] <- 1
+            } else {
+                dot_product <- sum(matrix[i, ] * matrix[j, ])
+                norm_i <- sqrt(sum(matrix[i, ]^2))
+                norm_j <- sqrt(sum(matrix[j, ]^2))
+                
+                if (norm_i > 0 && norm_j > 0) {
+                    similarity[i, j] <- dot_product / (norm_i * norm_j)
+                }
+            }
+        }
+    }
+    
+    return(similarity)
+}
+
+# Calculate cluster coherence based on content weights and completion
+calculate_cluster_coherence <- function(cluster_items) {
+    if (length(cluster_items) < 2) return(1.0)
+    
+    weights <- sapply(cluster_items, calculate_content_weight)
+    completions <- sapply(cluster_items, function(c) c$completion_percentage %||% 0)
+    
+    # Coherence = how evenly distributed the learning is within the cluster
+    weight_distribution <- weights / sum(weights)
+    completion_distribution <- completions / 100
+    
+    # Calculate weighted completion variance (lower = more coherent)
+    weighted_completion <- sum(weight_distribution * completion_distribution)
+    variance <- sum(weight_distribution * (completion_distribution - weighted_completion)^2)
+    
+    return(max(0, 1 - variance))  # Convert variance to coherence score
 }
 
 # Utility function for null coalescing

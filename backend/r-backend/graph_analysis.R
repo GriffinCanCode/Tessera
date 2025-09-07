@@ -4,7 +4,38 @@
 # Integrates with Perl backend for enhanced knowledge graph analysis
 
 # Load Tessera logger first
-source("tessera_logger.R")
+tryCatch({
+    source("tessera_logger.R")
+}, error = function(e) {
+    # Try relative path for when sourced from tests
+    tryCatch({
+        source("../../tessera_logger.R")
+    }, error = function(e2) {
+        # Fallback: create minimal logging functions
+        log_package_load <- function(pkg) message(paste("Loading:", pkg))
+        log_info <- function(msg) message(paste("[INFO]", msg))
+        log_warning <- function(msg) message(paste("[WARNING]", msg))
+        log_error <- function(msg) message(paste("[ERROR]", msg))
+        log_r_startup <- function(script) message(paste("Starting:", script))
+        
+        # Create tessera_logger object
+        tessera_logger <<- list(
+            log_analysis_start = function(op) message(paste("Starting:", op)),
+            log_import_operation = function(op) message(paste("Import:", op)),
+            log_data_processing = function(op, det = "") message(paste("Processing:", op, det)),
+            log_analysis_complete = function(op, det = "") message(paste("Complete:", op, det)),
+            log_analysis_error = function(op, err = "") message(paste("Error in", op, ":", err))
+        )
+    })
+})
+
+# Load Zig optimizations (with fallback)
+tryCatch({
+    source("../zig-backend/lib/ffi/r/zig_vector_ops.R")
+    source("../zig-backend/lib/ffi/r/zig_graph_ops.R")
+}, error = function(e) {
+    message("Zig optimizations not available, using R implementations")
+})
 
 # Load required libraries
 suppressPackageStartupMessages({
@@ -31,8 +62,8 @@ process_graph <- function(json_input) {
         graph_data <- fromJSON(json_input)
         
         tessera_logger$log_data_processing("parsed", 
-                                         context = list(nodes = length(graph_data$nodes),
-                                                       edges = length(graph_data$edges)))
+                                         paste("nodes:", length(graph_data$nodes), 
+                                               "edges:", length(graph_data$edges)))
         
         # Create igraph object
         g <- create_igraph_from_data(graph_data)
@@ -152,33 +183,164 @@ calculate_enhanced_metrics <- function(g, nodes) {
     return(metrics)
 }
 
-# Advanced centrality measures
+# Advanced centrality measures with Zig acceleration and vectorization
 calculate_centrality_measures <- function(g) {
     centrality <- list()
+    n <- vcount(g)
     
-    # PageRank
-    centrality$pagerank <- page_rank(g, directed = TRUE)$vector
+    tessera_logger$log_analysis_start(paste("Centrality calculation for", n, "nodes"))
     
-    # Betweenness centrality
-    centrality$betweenness <- betweenness(g, directed = TRUE)
+    # Get adjacency matrix for Zig operations
+    adj_matrix <- as.matrix(as_adjacency_matrix(g, type = "both"))
     
-    # Closeness centrality
+    # Use Zig acceleration for graph operations when available and beneficial
+    use_zig <- exists("is_zig_graph_available") && is_zig_graph_available() && n <= 1000 && n > 10
+    
+    if (use_zig) {
+        tessera_logger$log_analysis_start("Using Zig-accelerated graph operations")
+        
+        # Zig-accelerated degree centrality
+        tryCatch({
+            degree_result <- enhanced_degree_centrality(adj_matrix)
+            centrality$degree_in <- degree_result$in_degree
+            centrality$degree_out <- degree_result$out_degree
+            centrality$degree_total <- degree_result$total_degree
+        }, error = function(e) {
+            # Fallback to igraph
+            centrality$degree_in <<- degree(g, mode = "in")
+            centrality$degree_out <<- degree(g, mode = "out")
+            centrality$degree_total <<- degree(g, mode = "all")
+        })
+        
+        # Zig-accelerated PageRank
+        tryCatch({
+            centrality$pagerank <- enhanced_pagerank(adj_matrix, damping = 0.85, iterations = 50)
+        }, error = function(e) {
+            centrality$pagerank <<- page_rank(g, directed = TRUE)$vector
+        })
+        
+        # Zig-accelerated betweenness centrality
+        tryCatch({
+            centrality$betweenness <- enhanced_betweenness_centrality(adj_matrix)
+        }, error = function(e) {
+            centrality$betweenness <<- betweenness(g, directed = TRUE)
+        })
+        
+        tessera_logger$log_analysis_complete("Zig-accelerated centrality calculations")
+    } else {
+        # Standard igraph calculations with vectorization optimizations
+        
+        # Vectorized degree calculations
+        centrality$degree_in <- degree(g, mode = "in")
+        centrality$degree_out <- degree(g, mode = "out")
+        centrality$degree_total <- degree(g, mode = "all")
+        
+        # Optimized PageRank for smaller graphs
+        if (n < 500) {
+            centrality$pagerank <- page_rank(g, directed = TRUE)$vector
+        } else {
+            # Use faster approximation for large graphs
+            centrality$pagerank <- page_rank(g, directed = TRUE, options = list(niter = 20))$vector
+        }
+        
+        # Conditional betweenness calculation (expensive for large graphs)
+        if (n < 200) {
+            centrality$betweenness <- betweenness(g, directed = TRUE)
+        } else {
+            # Sample-based approximation for large graphs
+            sample_size <- min(100, n)
+            centrality$betweenness <- betweenness(g, directed = TRUE, v = sample(V(g), sample_size))
+        }
+    }
+    
+    # Always calculate these (relatively fast operations)
     centrality$closeness <- closeness(g, mode = "all")
     
-    # Eigenvector centrality
-    centrality$eigenvector <- eigen_centrality(g, directed = TRUE)$vector
+    # Eigenvector centrality (with error handling for disconnected graphs)
+    tryCatch({
+        centrality$eigenvector <- eigen_centrality(g, directed = TRUE)$vector
+    }, error = function(e) {
+        centrality$eigenvector <- rep(0, n)
+    })
     
-    # Authority and hub scores
-    hits_result <- hits_scores(g)
-    centrality$authority <- hits_result$authority
-    centrality$hub <- hits_result$hub
+    # Authority and hub scores (HITS algorithm)
+    tryCatch({
+        hits_result <- hits_scores(g)
+        centrality$authority <- hits_result$authority
+        centrality$hub <- hits_result$hub
+    }, error = function(e) {
+        centrality$authority <- rep(0, n)
+        centrality$hub <- rep(0, n)
+    })
     
-    # Degree centrality
-    centrality$degree_in <- degree(g, mode = "in")
-    centrality$degree_out <- degree(g, mode = "out")
-    centrality$degree_total <- degree(g, mode = "all")
+    # Enhanced similarity-based centrality using Zig optimizations
+    # Use Zig for medium to large graphs where custom algorithms provide benefits
+    if (exists("is_zig_available") && is_zig_available() && n > 100 && n <= 2000) {
+        tryCatch({
+            centrality$similarity_centrality <- calculate_zig_similarity_centrality(adj_matrix)
+            tessera_logger$log_analysis_complete("Zig-optimized similarity centrality")
+        }, error = function(e) {
+            tessera_logger$log_analysis_error("Zig similarity centrality failed, using R fallback", error = e$message)
+            # Fallback to R implementation
+            centrality$similarity_centrality <- calculate_r_similarity_centrality(adj_matrix)
+        })
+    } else if (n > 50 && n <= 500) {
+        # Use R vectorized for smaller graphs
+        centrality$similarity_centrality <- calculate_r_similarity_centrality(adj_matrix)
+        tessera_logger$log_analysis_complete("Vectorized similarity centrality")
+    }
     
+    tessera_logger$log_analysis_complete("All centrality measures calculated")
     return(centrality)
+}
+
+# Zig-optimized similarity-based centrality calculation
+# Use this for medium to large graphs where custom algorithms shine
+calculate_zig_similarity_centrality <- function(adj_matrix) {
+    n <- nrow(adj_matrix)
+    if (n < 2) return(rep(0, n))
+    
+    similarity_scores <- numeric(n)
+    
+    # Use Zig batch cosine similarity for complex similarity computations
+    # This is beneficial for custom algorithms beyond basic linear algebra
+    for (i in 1:n) {
+        query_vector <- adj_matrix[i, ]
+        other_vectors <- adj_matrix[-i, , drop = FALSE]
+        
+        if (nrow(other_vectors) > 0) {
+            # Use Zig for batch similarity calculation
+            similarities <- enhanced_batch_cosine_similarity(query_vector, other_vectors)
+            similarity_scores[i] <- mean(similarities, na.rm = TRUE)
+        }
+    }
+    
+    return(similarity_scores)
+}
+
+# R-optimized similarity-based centrality calculation  
+# Use this for smaller graphs where R's BLAS optimizations are sufficient
+calculate_r_similarity_centrality <- function(adj_matrix) {
+    n <- nrow(adj_matrix)
+    if (n < 2) return(rep(0, n))
+    
+    # Pure R vectorized implementation using optimized BLAS operations
+    # Normalize rows for cosine similarity
+    row_norms <- sqrt(rowSums(adj_matrix^2))
+    row_norms[row_norms == 0] <- 1  # Avoid division by zero
+    normalized_matrix <- adj_matrix / row_norms
+    
+    # Calculate similarity matrix using optimized matrix operations
+    similarity_matrix <- tcrossprod(normalized_matrix)
+    
+    # Calculate mean similarity for each node (excluding self-similarity)
+    similarity_scores <- numeric(n)
+    for (i in 1:n) {
+        similarities <- similarity_matrix[i, -i]
+        similarity_scores[i] <- mean(similarities, na.rm = TRUE)
+    }
+    
+    return(similarity_scores)
 }
 
 # Community detection using multiple algorithms

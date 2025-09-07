@@ -5,6 +5,9 @@
 
 set -e
 
+# Get the project root directory
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 echo "🚀 Installing Tessera Logging Dependencies..."
 
 # Colors for output
@@ -141,7 +144,7 @@ if command -v logrotate &> /dev/null; then
     log_step "Setting up log rotation..."
     
     cat > /tmp/tessera-logrotate << EOF
-/Users/griffinstrier/projects/Wikilizer/logs/*.log {
+$PROJECT_ROOT/logs/*.log {
     daily
     missingok
     rotate 7
@@ -151,7 +154,7 @@ if command -v logrotate &> /dev/null; then
     copytruncate
 }
 
-/Users/griffinstrier/projects/Wikilizer/backend/*/logs/*.log {
+$PROJECT_ROOT/backend/*/logs/*.log {
     daily
     missingok
     rotate 7

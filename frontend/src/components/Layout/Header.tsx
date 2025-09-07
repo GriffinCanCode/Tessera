@@ -1,4 +1,4 @@
-import { Search, TrendingUp, Network, Sparkles, Zap, Brain, GraduationCap, Settings, Lightbulb, Upload } from 'lucide-react';
+import { Network, Sparkles, Zap, Settings, Eye, PenTool, BarChart3 } from 'lucide-react';
 
 interface HeaderProps {
   currentView: string;
@@ -6,57 +6,60 @@ interface HeaderProps {
 }
 
 export function Header({ currentView, onViewChange }: HeaderProps) {
-  const navItems = [
+  // Map individual views to workflows
+  const getWorkflowFromView = (view: string) => {
+    const workflows = {
+      'dashboard': 'discover',
+      'search': 'discover',
+      'assimilator': 'create', 
+      'notebook': 'create',
+      'brain': 'analyze',
+      'graph': 'analyze',
+      'insights': 'analyze'
+    };
+    return workflows[view as keyof typeof workflows] || 'discover';
+  };
+
+  const currentWorkflow = getWorkflowFromView(currentView);
+
+  const workflowItems = [
     { 
-      id: 'dashboard', 
-      label: 'Learning Dashboard', 
-      icon: TrendingUp, 
-      gradient: 'from-blue-500 to-purple-600',
-      hoverColor: 'hover:text-blue-600'
+      id: 'discover', 
+      label: 'Discover', 
+      icon: Eye, 
+      gradient: 'from-blue-500 to-indigo-600',
+      description: 'Dashboard & Search',
+      subItems: ['dashboard', 'search']
     },
     { 
-      id: 'brain', 
-      label: 'Knowledge Brain', 
-      icon: Brain, 
-      gradient: 'from-pink-500 to-purple-600',
-      hoverColor: 'hover:text-pink-600'
+      id: 'create', 
+      label: 'Create', 
+      icon: PenTool, 
+      gradient: 'from-emerald-500 to-green-600',
+      description: 'Assimilator & Notebook',
+      subItems: ['assimilator', 'notebook']
     },
     { 
-      id: 'search', 
-      label: 'Search Content', 
-      icon: Search, 
+      id: 'analyze', 
+      label: 'Analyze', 
+      icon: BarChart3, 
       gradient: 'from-purple-500 to-pink-600',
-      hoverColor: 'hover:text-purple-600'
-    },
-    { 
-      id: 'assimilator', 
-      label: 'Data Assimilator', 
-      icon: Upload, 
-      gradient: 'from-orange-500 to-red-600',
-      hoverColor: 'hover:text-orange-600'
-    },
-    { 
-      id: 'graph', 
-      label: 'Learning Graph', 
-      icon: Network, 
-      gradient: 'from-teal-500 to-cyan-600',
-      hoverColor: 'hover:text-teal-600'
-    },
-    { 
-      id: 'insights', 
-      label: 'Learning Insights', 
-      icon: Lightbulb, 
-      gradient: 'from-yellow-500 to-orange-600',
-      hoverColor: 'hover:text-yellow-600'
-    },
-    { 
-      id: 'notebook', 
-      label: 'Learning Notebook', 
-      icon: GraduationCap, 
-      gradient: 'from-green-500 to-emerald-600',
-      hoverColor: 'hover:text-green-600'
-    },
+      description: 'Brain, Graph & Insights',
+      subItems: ['brain', 'graph', 'insights']
+    }
   ];
+
+  const handleWorkflowClick = (workflowId: string, subItems: string[]) => {
+    // If clicking the current workflow, cycle through its sub-items
+    if (workflowId === currentWorkflow) {
+      const currentIndex = subItems.indexOf(currentView);
+      const nextIndex = (currentIndex + 1) % subItems.length;
+      onViewChange(subItems[nextIndex]);
+    } else {
+      // Switch to the first item of the new workflow
+      onViewChange(subItems[0]);
+    }
+  };
 
   return (
     <header className="relative bg-white/95 backdrop-blur-md border-b border-white/20 shadow-lg">
@@ -98,79 +101,234 @@ export function Header({ currentView, onViewChange }: HeaderProps) {
             </div>
           </div>
 
-          {/* Enhanced Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-2">
-            {navItems.map(({ id, label, icon: Icon, gradient, hoverColor }) => (
+          {/* Enhanced Desktop Navigation - Workflow Based */}
+          <nav className="hidden md:flex items-center space-x-3">
+            {workflowItems.map(({ id, label, icon: Icon, gradient, description, subItems }) => (
               <button
                 key={id}
-                onClick={() => onViewChange(id)}
-                className={`group relative px-6 py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 ${
-                  currentView === id
-                    ? 'text-white shadow-lg'
-                    : `text-slate-600 ${hoverColor} hover:bg-white/80`
-                }`}
+                onClick={() => handleWorkflowClick(id, subItems)}
+                className={`workflow-button ${currentWorkflow === id ? 'active' : ''}`}
               >
-                {/* Active background */}
-                {currentView === id && (
-                  <div className={`absolute inset-0 bg-gradient-to-r ${gradient} rounded-xl shadow-lg pointer-events-none`}>
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent rounded-xl pointer-events-none"></div>
+                {/* Main button container with unique shape */}
+                <div className={`workflow-button-inner ${
+                  currentWorkflow === id ? 'active' : 'inactive'
+                }`}>
+                  
+                  {/* Active animated background */}
+                  {currentWorkflow === id && (
+                    <>
+                      <div className={`workflow-bg-primary bg-gradient-to-br ${gradient}`}></div>
+                      <div className="workflow-bg-overlay"></div>
+                      <div className="workflow-bg-shimmer"></div>
+                    </>
+                  )}
+                  
+                  {/* Hover glow effect */}
+                  {currentWorkflow !== id && (
+                    <div className={`workflow-glow bg-gradient-to-r ${gradient}`}></div>
+                  )}
+
+                  {/* Content */}
+                  <div className="relative flex flex-col items-center space-y-1.5">
+                    {/* Icon with floating animation */}
+                    <div className={`workflow-icon ${currentWorkflow === id ? 'active' : ''}`}>
+                      <Icon className={`w-5 h-5 ${
+                        currentWorkflow === id ? 'text-white drop-shadow-sm' : 'text-slate-600 group-hover:text-slate-800'
+                      } transition-all duration-300`} />
+                      
+                      {/* Icon glow for active state */}
+                      {currentWorkflow === id && (
+                        <div className="workflow-icon-glow bg-white/20"></div>
+                      )}
+                    </div>
+                    
+                    <div className="text-center">
+                      <span className={`workflow-text ${currentWorkflow === id ? 'active' : ''} block text-sm font-semibold ${
+                        currentWorkflow === id ? 'text-white drop-shadow-sm' : 'text-slate-700 group-hover:text-slate-900'
+                      } transition-all duration-300`}>{label}</span>
+                      <span className={`workflow-description block text-xs font-medium ${
+                        currentWorkflow === id ? 'text-white/80' : 'text-slate-500 group-hover:text-slate-600'
+                      } transition-all duration-300`}>{description}</span>
+                    </div>
                   </div>
-                )}
-                
-                {/* Hover background */}
-                {currentView !== id && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-slate-50 to-white rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-md pointer-events-none"></div>
-                )}
 
-                {/* Content */}
-                <div className="relative flex items-center space-x-2">
-                  <Icon className={`w-5 h-5 ${
-                    currentView === id ? 'text-white' : 'text-slate-500 group-hover:text-slate-700'
-                  } transition-colors duration-300`} />
-                  <span className="relative z-10">{label}</span>
+                  {/* Progress dots for sub-items */}
+                  <div className="progress-dots">
+                    {subItems.map((_, index) => (
+                      <div
+                        key={index}
+                        className={`progress-dot ${
+                          currentWorkflow === id && subItems.indexOf(currentView) === index
+                            ? 'active bg-white shadow-lg'
+                            : currentWorkflow === id
+                            ? 'bg-white/50'
+                            : 'bg-slate-300/60 group-hover:bg-slate-400/80'
+                        }`}
+                      ></div>
+                    ))}
+                  </div>
+
+                  {/* Sub-item counter badge */}
+                  {currentWorkflow === id && (
+                    <div className="counter-badge">
+                      <span className="text-xs font-bold text-white drop-shadow-sm">
+                        {subItems.indexOf(currentView) + 1}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Subtle corner accent */}
+                  <div className={`corner-accent top-right ${
+                    currentWorkflow === id 
+                      ? 'bg-white/30' 
+                      : 'bg-transparent group-hover:bg-slate-300/50'
+                  }`}></div>
                 </div>
-
-                {/* Active indicator dot */}
-                {currentView === id && (
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-white rounded-full animate-pulse pointer-events-none"></div>
-                )}
               </button>
             ))}
           </nav>
 
           {/* Enhanced Mobile Menu Button */}
           <div className="md:hidden">
-            <button className="group relative p-3 rounded-xl bg-gradient-to-r from-slate-100 to-white border border-slate-200 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-              <Settings className="w-5 h-5 text-slate-600 group-hover:text-slate-800 transition-colors group-hover:rotate-90 duration-300" />
+            <button className="group relative overflow-hidden p-3 rounded-2xl bg-white/95 border border-slate-200/60 
+                             shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 backdrop-blur-md">
+              {/* Hover glow effect */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-slate-400 to-slate-500 rounded-2xl 
+                            opacity-0 group-hover:opacity-15 transition-opacity duration-300 blur-sm pointer-events-none"></div>
+              
+              <div className="relative">
+                <Settings className="w-5 h-5 text-slate-600 group-hover:text-slate-800 transition-all duration-300 
+                                 group-hover:rotate-90" />
+              </div>
+              
+              {/* Active indicator */}
+              <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-slate-400/60 rounded-full 
+                            opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </button>
           </div>
         </div>
 
-        {/* Enhanced Mobile Navigation */}
+        {/* Enhanced Mobile Navigation - Workflow Based */}
         <div className="md:hidden mt-6 pb-4">
-          <nav className="grid grid-cols-2 gap-3">
-            {navItems.map(({ id, label, icon: Icon, gradient }) => (
+          <nav className="grid grid-cols-1 gap-5">
+            {workflowItems.map(({ id, label, icon: Icon, gradient, subItems }) => (
               <button
                 key={id}
-                onClick={() => onViewChange(id)}
-                className={`group relative p-4 rounded-xl border transition-all duration-300 transform hover:scale-[1.02] ${
-                  currentView === id
-                    ? 'border-transparent shadow-lg text-white'
-                    : 'border-slate-200 bg-white/80 text-slate-600 hover:border-slate-300 hover:bg-white'
+                onClick={() => handleWorkflowClick(id, subItems)}
+                className={`group relative overflow-hidden transition-all duration-500 transform hover:scale-[1.02] ${
+                  currentWorkflow === id
+                    ? 'shadow-2xl'
+                    : 'hover:shadow-lg'
                 }`}
               >
-                {/* Active background for mobile */}
-                {currentView === id && (
-                  <div className={`absolute inset-0 bg-gradient-to-r ${gradient} rounded-xl pointer-events-none`}>
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-xl pointer-events-none"></div>
-                  </div>
-                )}
+                {/* Main container with enhanced styling */}
+                <div className={`relative p-6 rounded-3xl border-2 transition-all duration-300 ${
+                  currentWorkflow === id
+                    ? 'border-transparent'
+                    : 'border-slate-200/60 hover:border-slate-300/80 bg-white/90 backdrop-blur-sm'
+                }`}>
+                  
+                  {/* Active animated background */}
+                  {currentWorkflow === id && (
+                    <>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} rounded-3xl`}></div>
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white/30 via-transparent to-white/10 rounded-3xl"></div>
+                      {/* Animated shimmer effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-3xl animate-pulse"></div>
+                    </>
+                  )}
+                  
+                  {/* Hover glow effect */}
+                  {currentWorkflow !== id && (
+                    <div className={`absolute -inset-1 bg-gradient-to-r ${gradient} rounded-3xl opacity-0 group-hover:opacity-15 transition-opacity duration-300 blur-sm pointer-events-none`}></div>
+                  )}
 
-                <div className="relative flex flex-col items-center space-y-2">
-                  <Icon className={`w-6 h-6 ${
-                    currentView === id ? 'text-white' : 'text-slate-500'
-                  } transition-colors duration-300`} />
-                  <span className="text-sm font-medium relative z-10">{label}</span>
+                  <div className="relative flex items-center space-x-5">
+                    {/* Enhanced icon section */}
+                    <div className={`relative transition-all duration-300 ${
+                      currentWorkflow === id ? 'animate-pulse' : 'group-hover:scale-110'
+                    }`}>
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                        currentWorkflow === id 
+                          ? 'bg-white/20 backdrop-blur-sm border border-white/30' 
+                          : 'bg-slate-100/80 group-hover:bg-slate-200/80'
+                      }`}>
+                        <Icon className={`w-8 h-8 ${
+                          currentWorkflow === id ? 'text-white drop-shadow-lg' : 'text-slate-600 group-hover:text-slate-800'
+                        } transition-all duration-300`} />
+                      </div>
+                      
+                      {/* Icon glow for active state */}
+                      {currentWorkflow === id && (
+                        <div className="absolute inset-0 bg-white/20 rounded-2xl blur-lg animate-pulse"></div>
+                      )}
+                    </div>
+                    
+                    {/* Content section */}
+                    <div className="flex-1 text-left">
+                      <span className={`text-xl font-bold tracking-wide block ${
+                        currentWorkflow === id ? 'text-white drop-shadow-sm' : 'text-slate-700 group-hover:text-slate-900'
+                      } transition-all duration-300`}>{label}</span>
+                      <span className={`text-sm font-medium block mt-1 ${
+                        currentWorkflow === id ? 'text-white/90' : 'text-slate-500 group-hover:text-slate-600'
+                      } transition-all duration-300`}>
+                        {id === 'discover' && 'Dashboard & Search'}
+                        {id === 'create' && 'Assimilator & Notebook'}
+                        {id === 'analyze' && 'Brain, Graph & Insights'}
+                      </span>
+                      
+                      {/* Progress dots for mobile */}
+                      <div className="flex space-x-1 mt-3">
+                        {subItems.map((_, index) => (
+                          <div
+                            key={index}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                              currentWorkflow === id && subItems.indexOf(currentView) === index
+                                ? 'bg-white scale-125 shadow-lg'
+                                : currentWorkflow === id
+                                ? 'bg-white/50'
+                                : 'bg-slate-300/60 group-hover:bg-slate-400/80'
+                            }`}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* Enhanced indicator section */}
+                    {currentWorkflow === id && (
+                      <div className="relative text-right">
+                        <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center border border-white/30 animate-pulse">
+                          <span className="text-lg font-bold text-white drop-shadow-sm">
+                            {subItems.indexOf(currentView) + 1}
+                          </span>
+                        </div>
+                        <span className="text-xs text-white/80 mt-2 block font-medium">
+                          {currentView.charAt(0).toUpperCase() + currentView.slice(1)}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Arrow indicator for inactive states */}
+                    {currentWorkflow !== id && (
+                      <div className="w-8 h-8 rounded-full bg-slate-100/80 group-hover:bg-slate-200/80 flex items-center justify-center transition-all duration-300">
+                        <svg className="w-4 h-4 text-slate-500 group-hover:text-slate-700 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Subtle corner accents */}
+                  <div className={`absolute top-3 right-3 w-2 h-2 rounded-full transition-all duration-300 ${
+                    currentWorkflow === id 
+                      ? 'bg-white/40' 
+                      : 'bg-transparent group-hover:bg-slate-300/60'
+                  }`}></div>
+                  <div className={`absolute bottom-3 left-3 w-2 h-2 rounded-full transition-all duration-300 ${
+                    currentWorkflow === id 
+                      ? 'bg-white/30' 
+                      : 'bg-transparent group-hover:bg-slate-300/40'
+                  }`}></div>
                 </div>
               </button>
             ))}

@@ -15,7 +15,8 @@ analyze_learning_patterns <- function(json_input) {
         learning_data <- fromJSON(json_input)
         
         # Handle empty data case gracefully
-        if (is.null(learning_data$content) || length(learning_data$content) == 0) {
+        if ((is.null(learning_data$content) || length(learning_data$content) == 0) &&
+            (is.null(learning_data$articles) || length(learning_data$articles) == 0)) {
             result <- list(
                 growth_analysis = list(
                     dates = character(0),
@@ -47,10 +48,10 @@ analyze_learning_patterns <- function(json_input) {
             )
         } else {
             # Analyze different temporal aspects
-            growth_analysis <- analyze_growth_patterns(temporal_data)
-            discovery_timeline <- analyze_discovery_timeline(temporal_data)
-            knowledge_evolution <- analyze_knowledge_evolution(temporal_data)
-            learning_phases <- identify_learning_phases(temporal_data)
+            growth_analysis <- analyze_growth_patterns(learning_data)
+            discovery_timeline <- analyze_discovery_timeline(learning_data)
+            knowledge_evolution <- analyze_knowledge_evolution(learning_data)
+            learning_phases <- identify_learning_phases(learning_data)
             
             # Return comprehensive temporal analysis
             result <- list(
@@ -58,7 +59,7 @@ analyze_learning_patterns <- function(json_input) {
                 discovery_timeline = discovery_timeline,
                 knowledge_evolution = knowledge_evolution,
                 learning_phases = learning_phases,
-                temporal_metrics = calculate_temporal_metrics(temporal_data)
+                temporal_metrics = calculate_temporal_metrics(learning_data)
             )
         }
         
@@ -315,7 +316,13 @@ identify_learning_phases <- function(temporal_data) {
     if (is.null(articles)) return(list(error = "No articles data"))
     
     # Create time series of discovery activity
-    article_dates <- if (is.data.frame(articles)) as.Date(articles$created_at) else as.Date(character(0))
+    if (is.data.frame(articles)) {
+        article_dates <- as.Date(articles$created_at)
+    } else if (is.list(articles)) {
+        article_dates <- as.Date(sapply(articles, function(x) x$created_at))
+    } else {
+        article_dates <- as.Date(character(0))
+    }
     article_dates <- article_dates[!is.na(article_dates)]
     
     if (length(article_dates) < 10) {
@@ -389,7 +396,13 @@ calculate_temporal_metrics <- function(temporal_data) {
     links <- temporal_data$links
     
     if (!is.null(articles)) {
-        article_dates <- if (is.data.frame(articles)) as.Date(articles$created_at) else as.Date(character(0))
+        if (is.data.frame(articles)) {
+            article_dates <- as.Date(articles$created_at)
+        } else if (is.list(articles)) {
+            article_dates <- as.Date(sapply(articles, function(x) x$created_at))
+        } else {
+            article_dates <- as.Date(character(0))
+        }
         article_dates <- article_dates[!is.na(article_dates)]
         
         if (length(article_dates) > 0) {
@@ -403,7 +416,13 @@ calculate_temporal_metrics <- function(temporal_data) {
     }
     
     if (!is.null(links)) {
-        link_dates <- if (is.data.frame(links)) as.Date(links$created_at) else as.Date(character(0))
+        if (is.data.frame(links)) {
+            link_dates <- as.Date(links$created_at)
+        } else if (is.list(links)) {
+            link_dates <- as.Date(sapply(links, function(x) x$created_at))
+        } else {
+            link_dates <- as.Date(character(0))
+        }
         link_dates <- link_dates[!is.na(link_dates)]
         
         if (length(link_dates) > 0 && metrics$total_days_active > 0) {
@@ -551,6 +570,9 @@ case_when <- function(...) {
     return(rep(NA, length(dots[[1]])))
 }
 
+# Alias for backward compatibility with tests
+analyze_temporal_patterns <- analyze_learning_patterns
+
 # Main execution
 main <- function() {
     args <- commandArgs(trailingOnly = TRUE)
@@ -561,7 +583,7 @@ main <- function() {
         quit(status = 1)
     }
     
-    result <- analyze_temporal_patterns(args[1])
+    result <- analyze_learning_patterns(args[1])
     cat(result)
 }
 

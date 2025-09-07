@@ -4,6 +4,7 @@ import { LearningDashboard } from './components/LearningDashboard';
 import { Brain } from './components/Brain';
 import { Search } from './components/Search/Search';
 import { Assimilator } from './components/Assimilator';
+import { CrawlManagement } from './components/Crawl';
 import { KnowledgeGraph } from './components/KnowledgeGraph';
 import { PersonalInsights } from './components/PersonalInsights';
 import { Notebook } from './components/Notebook';
@@ -45,6 +46,8 @@ function App() {
         return <Search />;
       case 'assimilator':
         return <Assimilator />;
+      case 'crawl':
+        return <CrawlManagement />;
       case 'graph':
         return (
           <div className="container-page">

@@ -12,7 +12,12 @@ our @EXPORT = qw(
     create_mock_article_data
     create_mock_links
     get_sample_wikipedia_html
+    create_sample_article
+    generate_sample_content
+    generate_sample_categories
 );
+
+use Moo;
 
 use YAML::XS qw(LoadFile);
 use File::Spec;
@@ -182,6 +187,80 @@ sub get_sample_wikipedia_html {
 </body>
 </html>
     };
+}
+
+# Create sample article for benchmarks
+sub create_sample_article {
+    my ($self, %options) = @_;
+    
+    my $id = $options{id} || 1;
+    my $title = $options{title} || "Test Article $id";
+    my $content = $options{content} || generate_sample_content(500);
+    my $categories = $options{categories} || generate_sample_categories(3);
+    
+    return {
+        id => $id,
+        title => $title,
+        url => "https://en.wikipedia.org/wiki/" . ($title =~ s/ /_/gr),
+        content => $content,
+        summary => substr($content, 0, 200) . "...",
+        categories => $categories,
+        sections => [
+            { level => 2, title => "Introduction" },
+            { level => 2, title => "History" },
+            { level => 3, title => "Early Development" },
+            { level => 2, title => "Applications" }
+        ],
+        coordinates => {},
+        parsed_at => time(),
+    };
+}
+
+# Generate sample content of specified length
+sub generate_sample_content {
+    my ($length) = @_;
+    $length ||= 500;
+    
+    my @words = qw(
+        research study analysis investigation examination exploration
+        development implementation application utilization methodology
+        framework approach technique strategy process procedure
+        concept principle theory hypothesis assumption conclusion
+        algorithm computation calculation optimization performance
+        system architecture design structure organization pattern
+        data information knowledge intelligence learning understanding
+        technology innovation advancement progress evolution transformation
+        science mathematics physics chemistry biology psychology
+        computer software hardware network database programming
+    );
+    
+    my $content = "";
+    while (length($content) < $length) {
+        my $word = $words[int(rand(@words))];
+        $content .= "$word ";
+    }
+    
+    return substr($content, 0, $length);
+}
+
+# Generate sample categories
+sub generate_sample_categories {
+    my ($count) = @_;
+    $count ||= 3;
+    
+    my @categories = qw(
+        Computer_Science Mathematics Physics Chemistry Biology
+        Technology Programming Algorithms Data_Structures
+        Artificial_Intelligence Machine_Learning Research
+        Academic_Topics Scientific_Methods Engineering
+    );
+    
+    my @selected;
+    for my $i (1..$count) {
+        push @selected, $categories[int(rand(@categories))];
+    }
+    
+    return \@selected;
 }
 
 1;

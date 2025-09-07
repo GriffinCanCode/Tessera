@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Rocket, Check, AlertTriangle, Bug, Lightbulb } from 'lucide-react';
+import { Rocket, Check, AlertTriangle, Bug, Lightbulb, Sparkles, Zap, Globe, Target, Settings, Play } from 'lucide-react';
 import TesseraAPI from '../../services/api';
 import type { CrawlRequest } from '../../types/api';
 
@@ -51,36 +51,60 @@ function CrawlForm({ onSubmit, isLoading }: CrawlFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Start URL */}
-      <div className="space-y-3">
-        <label className="block text-sm font-semibold text-slate-800">
-          Starting Wikipedia Article URL
-        </label>
-        <input
-          type="url"
-          value={startUrl}
-          onChange={(e) => setStartUrl(e.target.value)}
-          placeholder="https://en.wikipedia.org/wiki/..."
-          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-sm
-                   focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none
-                   transition-all duration-200 text-slate-800 placeholder-slate-400"
-          required
-        />
+      {/* Enhanced Start URL */}
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2">
+          <Globe className="w-5 h-5 text-emerald-600" />
+          <label className="block text-sm font-bold text-slate-800">
+            Starting Wikipedia Article URL
+          </label>
+          {startUrl.trim() && (
+            <div className="flex items-center space-x-1 px-2 py-1 bg-emerald-100 rounded-full">
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-xs font-semibold text-emerald-700">Valid URL</span>
+            </div>
+          )}
+        </div>
         
-        {/* Quick Start Options */}
-        <div className="space-y-2">
-          <p className="text-xs text-slate-600 font-medium">Quick Start Options:</p>
+        <div className="relative group">
+          <input
+            type="url"
+            value={startUrl}
+            onChange={(e) => setStartUrl(e.target.value)}
+            placeholder="https://en.wikipedia.org/wiki/..."
+            className="w-full px-4 py-4 rounded-xl border-2 border-slate-200 bg-white/90 backdrop-blur-sm
+                     focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20 focus:outline-none
+                     transition-all duration-300 text-slate-800 placeholder-slate-400 font-medium
+                     group-hover:border-emerald-300"
+            required
+          />
+          {startUrl.trim() && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Target className="w-5 h-5 text-emerald-500 animate-pulse" />
+            </div>
+          )}
+        </div>
+        
+        {/* Enhanced Quick Start Options */}
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <Zap className="w-4 h-4 text-teal-500" />
+            <p className="text-sm text-slate-700 font-semibold">Quick Start Options:</p>
+          </div>
           <div className="flex flex-wrap gap-2">
             {commonStartUrls.map((url, index) => (
               <button
                 key={index}
                 type="button"
                 onClick={() => setStartUrl(url)}
-                className="px-3 py-1 text-xs rounded-full bg-gradient-to-r from-blue-100 to-purple-100
-                         hover:from-blue-200 hover:to-purple-200 text-slate-700 font-medium
-                         transition-all duration-200 transform hover:scale-105"
+                className="group px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-emerald-100 via-teal-100 to-cyan-100
+                         hover:from-emerald-200 hover:via-teal-200 hover:to-cyan-200 text-slate-700 font-semibold
+                         transition-all duration-300 transform hover:scale-105 hover:shadow-md
+                         border border-emerald-200/50 hover:border-emerald-300"
               >
-                {url.split('/').pop()?.replace(/_/g, ' ')}
+                <span className="group-hover:tracking-wide transition-all duration-200">
+                  {url.split('/').pop()?.replace(/_/g, ' ')}
+                </span>
               </button>
             ))}
           </div>
@@ -177,32 +201,55 @@ function CrawlForm({ onSubmit, isLoading }: CrawlFormProps) {
         </div>
       </div>
 
-      {/* Submit Button */}
-      <button
-        type="submit"
-        disabled={isLoading || !startUrl.trim()}
-        className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 via-blue-600 to-teal-600
-                 text-white font-bold rounded-xl hover:from-purple-700 hover:via-blue-700 hover:to-teal-700
-                 disabled:from-slate-400 disabled:via-slate-500 disabled:to-slate-600
-                 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl
-                 disabled:transform-none disabled:shadow-none relative overflow-hidden"
-      >
-        {isLoading ? (
-          <div className="flex items-center justify-center space-x-2">
-            <div className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></div>
-            <span>Starting Crawl...</span>
-          </div>
-        ) : (
-          <div className="flex items-center justify-center space-x-2">
-            <Rocket className="w-5 h-5" />
-            <span>Start Crawling</span>
+      {/* Enhanced Submit Button */}
+      <div className="relative">
+        <button
+          type="submit"
+          disabled={isLoading || !startUrl.trim()}
+          className="group w-full px-8 py-5 bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500
+                   text-white font-bold rounded-2xl hover:from-emerald-600 hover:via-teal-600 hover:to-green-600
+                   disabled:from-slate-400 disabled:via-slate-500 disabled:to-slate-600
+                   transition-all duration-500 transform hover:scale-[1.02] hover:shadow-2xl hover:-translate-y-1
+                   disabled:transform-none disabled:shadow-none relative overflow-hidden
+                   border border-emerald-400/30 shadow-xl"
+        >
+          {/* Button glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/40 to-green-400/40 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
+          
+          {isLoading ? (
+            <div className="relative z-10 flex items-center justify-center space-x-3">
+              <div className="flex space-x-1">
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                <div className="w-2 h-2 bg-white rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+              </div>
+              <span className="text-lg">Launching Crawler...</span>
+              <Zap className="w-5 h-5 animate-pulse" />
+            </div>
+          ) : (
+            <div className="relative z-10 flex items-center justify-center space-x-3">
+              <div className="transform group-hover:rotate-12 group-hover:scale-110 transition-all duration-300">
+                <Rocket className="w-6 h-6 group-hover:animate-bounce" />
+              </div>
+              <span className="text-lg group-hover:tracking-wider transition-all duration-300">Launch Crawler</span>
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <Sparkles className="w-5 h-5 animate-pulse" />
+              </div>
+            </div>
+          )}
+          
+          {/* Enhanced shimmer effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent
+                        transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+        </button>
+        
+        {/* Floating action indicator */}
+        {!isLoading && startUrl.trim() && (
+          <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center animate-bounce">
+            <Play className="w-3 h-3 text-white" />
           </div>
         )}
-        
-        {/* Animated background effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent
-                      transform -skew-x-12 -translate-x-full animate-shimmer"></div>
-      </button>
+      </div>
     </form>
   );
 }
@@ -338,17 +385,49 @@ export function CrawlManagement() {
           </div>
         )}
 
-        {/* Crawl Form */}
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl border border-white/30 shadow-xl p-8">
-          <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center space-x-2">
-            <Bug className="w-8 h-8 text-slate-700" />
-            <span>New Crawl Session</span>
-          </h2>
+        {/* Enhanced Crawl Form */}
+        <div className="relative group">
+          {/* Animated background glow */}
+          <div className="absolute -inset-2 bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-green-400/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
           
-          <CrawlForm
-            onSubmit={handleStartCrawl}
-            isLoading={crawlMutation.isPending}
-          />
+          <div className="relative bg-white/95 backdrop-blur-md rounded-3xl border border-white/40 shadow-2xl p-8 overflow-hidden">
+            {/* Background pattern */}
+            <div className="absolute inset-0 opacity-[0.02]">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.6) 1px, transparent 0)`,
+                backgroundSize: '30px 30px'
+              }}></div>
+            </div>
+            
+            <div className="relative z-10">
+              {/* Enhanced Header */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100/80 rounded-full border border-emerald-200/50 mb-4">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-semibold text-emerald-700">Crawler Configuration</span>
+                </div>
+                
+                <h2 className="text-3xl font-bold text-slate-800 mb-2 flex items-center justify-center space-x-3">
+                  <div className="relative">
+                    <Settings className="w-8 h-8 text-emerald-600 animate-spin" style={{animationDuration: '8s'}} />
+                    <div className="absolute inset-0 w-8 h-8 bg-emerald-400/20 rounded-full animate-ping"></div>
+                  </div>
+                  <span>New Crawl Session</span>
+                  <Sparkles className="w-6 h-6 text-teal-500 animate-pulse" />
+                </h2>
+                
+                <p className="text-slate-600 max-w-2xl mx-auto">
+                  Configure your Wikipedia exploration parameters and launch an intelligent crawling session 
+                  to discover new knowledge connections.
+                </p>
+              </div>
+              
+              <CrawlForm
+                onSubmit={handleStartCrawl}
+                isLoading={crawlMutation.isPending}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Help Section */}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 
-export type ViewType = 'dashboard' | 'brain' | 'search' | 'assimilator' | 'graph' | 'insights' | 'notebook';
+export type ViewType = 'dashboard' | 'brain' | 'search' | 'assimilator' | 'crawl' | 'graph' | 'insights' | 'notebook';
 
 interface AppState {
   // Navigation

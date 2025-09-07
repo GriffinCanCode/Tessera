@@ -13,6 +13,18 @@ use File::Basename qw(dirname);
 use Moo;
 use namespace::clean;
 
+# Zig acceleration support
+our $ZIG_AVAILABLE = 0;
+eval {
+    # Add the zig-backend FFI path to @INC
+    use lib '../../zig-backend/lib/ffi/perl';
+    require ZigVectorOps;
+    $ZIG_AVAILABLE = 1;
+};
+if ($@) {
+    # Zig acceleration not available, will use fallback implementations
+}
+
 # Attributes
 has 'config' => (
     is       => 'ro',
@@ -982,23 +994,75 @@ sub semantic_search_chunks {
     
     return [] unless $chunks && @$chunks;
     
-    # Calculate similarities (basic implementation - could use SQLite vector extensions)
+    # High-performance similarity calculation with Zig acceleration
     my @scored_chunks;
     
-    for my $chunk (@$chunks) {
-        my $stored_embedding = $self->json->decode($chunk->{embedding_blob});
-        my $similarity = $self->_cosine_similarity($query_embedding, $stored_embedding);
+    if ($ZIG_AVAILABLE && @$chunks > 10) {
+        # Use Zig for batch processing with large datasets
+        eval {
+            my @valid_chunks;
+            my @embeddings;
+            
+            # Prepare data for batch processing
+            for my $chunk (@$chunks) {
+                my $stored_embedding = $self->json->decode($chunk->{embedding_blob});
+                if (@$stored_embedding == @$query_embedding) {
+                    push @valid_chunks, $chunk;
+                    push @embeddings, $stored_embedding;
+                }
+            }
+            
+            if (@embeddings) {
+                # Use Zig batch processing with threshold filtering
+                my ($similarities, $indices) = ZigVectorOps::batch_similarity_with_threshold(
+                    $query_embedding, \@embeddings, $min_similarity
+                );
+                
+                # Build results from filtered indices
+                for my $i (0 .. $#$similarities) {
+                    my $chunk = $valid_chunks[$indices->[$i]];
+                    push @scored_chunks, {
+                        chunk_id => $chunk->{id},
+                        article_id => $chunk->{article_id},
+                        article_title => $chunk->{article_title},
+                        content => $chunk->{content},
+                        section_name => $chunk->{section_name},
+                        chunk_type => $chunk->{chunk_type},
+                        similarity => $similarities->[$i],
+                    };
+                }
+                
+                $self->logger->info("Used Zig acceleration for semantic search", {
+                    total_chunks => scalar(@$chunks),
+                    valid_chunks => scalar(@valid_chunks),
+                    results_above_threshold => scalar(@$similarities)
+                });
+            }
+        };
         
-        if ($similarity >= $min_similarity) {
-            push @scored_chunks, {
-                chunk_id => $chunk->{id},
-                article_id => $chunk->{article_id},
-                article_title => $chunk->{article_title},
-                content => $chunk->{content},
-                section_name => $chunk->{section_name},
-                chunk_type => $chunk->{chunk_type},
-                similarity => $similarity,
-            };
+        if ($@) {
+            $self->logger->warn("Zig acceleration failed, falling back to Perl: $@");
+            $ZIG_AVAILABLE = 0;  # Disable for this session
+        }
+    }
+    
+    # Fallback: Original Perl implementation (for small batches or when Zig unavailable)
+    if (!$ZIG_AVAILABLE || @$chunks <= 10 || !@scored_chunks) {
+        for my $chunk (@$chunks) {
+            my $stored_embedding = $self->json->decode($chunk->{embedding_blob});
+            my $similarity = $self->_cosine_similarity($query_embedding, $stored_embedding);
+            
+            if ($similarity >= $min_similarity) {
+                push @scored_chunks, {
+                    chunk_id => $chunk->{id},
+                    article_id => $chunk->{article_id},
+                    article_title => $chunk->{article_title},
+                    content => $chunk->{content},
+                    section_name => $chunk->{section_name},
+                    chunk_type => $chunk->{chunk_type},
+                    similarity => $similarity,
+                };
+            }
         }
     }
     
@@ -1022,6 +1086,12 @@ sub _estimate_tokens {
 sub _cosine_similarity {
     my ($self, $vec1, $vec2) = @_;
     
+    # Use Zig acceleration if available for single similarity calculations
+    if ($ZIG_AVAILABLE) {
+        return ZigVectorOps::enhanced_cosine_similarity($vec1, $vec2);
+    }
+    
+    # Fallback: Pure Perl implementation
     return 0 unless @$vec1 == @$vec2;
     
     my ($dot_product, $norm1, $norm2) = (0, 0, 0);

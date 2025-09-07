@@ -105,18 +105,30 @@ export function LearningDashboard() {
       if (analyticsData.success && analyticsData.data) {
         const apiSubjects = analyticsData.data.subjects;
         
-        // Transform API data to component format
-        const subjectsData: Subject[] = apiSubjects.map((subject: any) => ({
+        // Transform API data to component format using weighted completion
+        const subjectsData: Subject[] = apiSubjects.map((subject: {
+          id: number;
+          name: string;
+          description: string;
+          color: string;
+          icon: string;
+          weighted_completion?: number;
+          avg_completion?: number;
+          total_content?: number;
+          completed_content?: number;
+          total_time?: number;
+          started_content?: number;
+        }) => ({
           id: subject.id,
           name: subject.name,
           description: subject.description,
           color: subject.color,
           icon: subject.icon,
-          progress: Math.round(subject.avg_completion || 0),
+          progress: Math.round(subject.weighted_completion || subject.avg_completion || 0),
           totalContent: subject.total_content || 0,
           completedContent: subject.completed_content || 0,
           timeSpent: subject.total_time || 0,
-          recentActivity: subject.started_content > 0
+          recentActivity: (subject.started_content || 0) > 0
         }));
         
         setSubjects(subjectsData);
@@ -128,7 +140,16 @@ export function LearningDashboard() {
         let recentContentData: LearningContent[] = [];
         
         if (contentData.success && contentData.data && contentData.data.content) {
-          recentContentData = contentData.data.content.map((content: any) => ({
+          recentContentData = contentData.data.content.map((content: {
+            id: number;
+            title: string;
+            content_type: string;
+            completion_percentage?: number;
+            difficulty_level?: number;
+            estimated_time_minutes?: number;
+            actual_time_minutes?: number;
+            rating?: number;
+          }) => ({
             id: content.id,
             title: content.title,
             content_type: content.content_type,
@@ -143,13 +164,14 @@ export function LearningDashboard() {
         
         setRecentContent(recentContentData);
         
-        // Calculate stats from real data
+        // Calculate stats using weighted knowledge metrics
         const totalContent = recentContentData.length;
         const totalSubjects = subjectsData.length;
         const totalTimeSpent = analyticsData.data.brain_stats?.total_time_minutes || 0;
-        const averageCompletion = recentContentData.length > 0 
-          ? recentContentData.reduce((sum, c) => sum + c.completion_percentage, 0) / recentContentData.length
-          : 0;
+        
+        // Use knowledge velocity instead of simple completion average
+        const knowledgeVelocity = analyticsData.data.brain_stats?.knowledge_velocity || 0;
+        const averageCompletion = knowledgeVelocity * 100; // Convert RKD to percentage for display
         
         setStats({
           totalContent,
@@ -372,7 +394,7 @@ export function LearningDashboard() {
                 <Target className="h-6 w-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg. Completion</p>
+                <p className="text-sm font-medium text-gray-600">Knowledge Depth</p>
                 <p className="text-2xl font-bold text-gray-900">{Math.round(stats.averageCompletion)}%</p>
               </div>
             </div>
@@ -675,7 +697,7 @@ export function LearningDashboard() {
                   </label>
                   <select
                     value={newKnowledge.contentType}
-                    onChange={(e) => setNewKnowledge({...newKnowledge, contentType: e.target.value as any})}
+                    onChange={(e) => setNewKnowledge({...newKnowledge, contentType: e.target.value as 'article' | 'book' | 'video' | 'podcast' | 'course' | 'other'})}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="article">Article</option>

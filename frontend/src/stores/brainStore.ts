@@ -29,7 +29,6 @@ interface BrainState {
   
   // UI State
   selectedArea: KnowledgeArea | null;
-  hoveredArea: KnowledgeArea | null;
   viewMode: '3d' | 'classic';
   animationSpeed: number;
   contextLost: boolean;
@@ -39,7 +38,6 @@ interface BrainState {
   setKnowledgeAreas: (areas: KnowledgeArea[]) => void;
   setBrainStats: (stats: BrainStats) => void;
   setSelectedArea: (area: KnowledgeArea | null) => void;
-  setHoveredArea: (area: KnowledgeArea | null) => void;
   setViewMode: (mode: '3d' | 'classic') => void;
   setAnimationSpeed: (speed: number) => void;
   setContextLost: (lost: boolean) => void;
@@ -61,7 +59,6 @@ export const useBrainStore = create<BrainState>()(
       knowledgeAreas: [],
       brainStats: initialBrainStats,
       selectedArea: null,
-      hoveredArea: null,
       viewMode: '3d',
       animationSpeed: 1.0,
       contextLost: false,
@@ -73,8 +70,6 @@ export const useBrainStore = create<BrainState>()(
       setBrainStats: (stats) => set({ brainStats: stats }, false, 'setBrainStats'),
       
       setSelectedArea: (area) => set({ selectedArea: area }, false, 'setSelectedArea'),
-      
-      setHoveredArea: (area) => set({ hoveredArea: area }, false, 'setHoveredArea'),
       
       setViewMode: (mode) => set({ 
         viewMode: mode,
@@ -91,7 +86,6 @@ export const useBrainStore = create<BrainState>()(
         knowledgeAreas: [],
         brainStats: initialBrainStats,
         selectedArea: null,
-        hoveredArea: null,
         isLoading: true,
       }, false, 'resetBrainState'),
     }),

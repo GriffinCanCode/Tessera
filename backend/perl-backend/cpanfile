@@ -40,6 +40,12 @@ requires 'Log::Log4perl';
 requires 'Log::Log4perl::Appender::ScreenColoredLevels';
 requires 'Term::ANSIColor';
 
+# HTTP client for R service integration
+requires 'HTTP::Tiny', '>= 0.076';
+
+# FFI for Zig integration (legacy)
+requires 'FFI::Platypus', '>= 1.00';
+
 # Text processing
 requires 'Text::Trim';
 requires 'Encode';

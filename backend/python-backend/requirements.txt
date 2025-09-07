@@ -14,7 +14,7 @@ tenacity==9.0.0
 # RAG Embedding Dependencies
 sentence-transformers==3.3.1
 numpy==2.2.1
-torch==2.5.1
+torch>=2.6.0
 transformers==4.47.1
 # Data Ingestion Dependencies
 yt-dlp==2024.12.23

@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useSearchArticles } from '../../hooks/useTessera';
 import { SearchInput } from './SearchInput';
 import { SearchResults } from './SearchResults';
-import { BookOpen, Sparkles, Zap, Bot, Brain, Atom, Network, BarChart3, RefreshCw } from 'lucide-react';
+import { useAppStore } from '../../stores';
+import { BookOpen, Sparkles, Zap, Bot, Brain, Atom, Network, BarChart3, RefreshCw, Rocket } from 'lucide-react';
 
 export function Search() {
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const { setCurrentView } = useAppStore();
 
   console.log('Search component render:', { query, debouncedQuery });
 
@@ -64,6 +66,115 @@ export function Search() {
             </div>
           </div>
         </div>
+
+        {/* Enhanced Wikipedia Crawler Card */}
+        <div className="max-w-4xl mx-auto">
+          <div className="relative group">
+            {/* Animated background glow */}
+            <div className="absolute -inset-4 bg-gradient-to-r from-emerald-400/20 via-teal-400/20 to-green-400/20 rounded-3xl blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700"></div>
+            
+            <div className="relative bg-white/95 backdrop-blur-md rounded-3xl border border-white/40 shadow-2xl p-8 overflow-hidden">
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-[0.03]">
+                <div className="absolute inset-0" style={{
+                  backgroundImage: `radial-gradient(circle at 2px 2px, rgba(16, 185, 129, 0.8) 1px, transparent 0)`,
+                  backgroundSize: '40px 40px'
+                }}></div>
+              </div>
+              
+              {/* Content */}
+              <div className="relative z-10 text-center space-y-6">
+                {/* Header */}
+                <div className="space-y-3">
+                  <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100/80 rounded-full border border-emerald-200/50">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-semibold text-emerald-700">Knowledge Expansion</span>
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-slate-800">
+                    Discover New Connections
+                  </h3>
+                  <p className="text-slate-600 max-w-2xl mx-auto">
+                    Can't find what you're looking for? Launch our intelligent Wikipedia crawler to discover 
+                    new articles and expand your personal knowledge universe.
+                  </p>
+                </div>
+
+                {/* Interactive Crawler Button */}
+                <div className="relative">
+                  <button
+                    onClick={() => setCurrentView('crawl')}
+                    className="group/btn relative inline-flex items-center space-x-4 px-10 py-5 text-lg font-bold
+                             bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500 text-white rounded-2xl
+                             hover:from-emerald-600 hover:via-teal-600 hover:to-green-600 
+                             transition-all duration-500 shadow-xl hover:shadow-2xl 
+                             transform hover:scale-105 hover:-translate-y-2 active:scale-95
+                             border border-emerald-400/30"
+                  >
+                    {/* Button glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/40 to-green-400/40 rounded-2xl blur-lg opacity-0 group-hover/btn:opacity-100 transition-all duration-500"></div>
+                    
+                    {/* Animated rocket icon */}
+                    <div className="relative z-10 transform group-hover/btn:rotate-12 group-hover/btn:scale-110 transition-all duration-300">
+                      <Rocket className="w-7 h-7 group-hover/btn:animate-bounce" />
+                    </div>
+                    
+                    <span className="relative z-10 group-hover/btn:tracking-wider transition-all duration-300">
+                      Launch Crawler
+                    </span>
+                    
+                    {/* Sparkle effects */}
+                    <div className="relative z-10 opacity-0 group-hover/btn:opacity-100 transition-all duration-300">
+                      <Sparkles className="w-6 h-6 animate-pulse" />
+                    </div>
+                    
+                    {/* Shimmer effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000"></div>
+                  </button>
+                  
+                  {/* Floating action indicators */}
+                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 animate-bounce">
+                    <Zap className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+
+                {/* Feature highlights */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+                  <div className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100">
+                    <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-lg flex items-center justify-center">
+                      <Brain className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-emerald-700">Smart Discovery</p>
+                      <p className="text-xs text-emerald-600">AI-guided exploration</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-teal-50 to-cyan-50 border border-teal-100">
+                    <div className="w-8 h-8 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                      <Network className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-teal-700">Deep Connections</p>
+                      <p className="text-xs text-teal-600">Link analysis & mapping</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3 p-3 rounded-xl bg-gradient-to-r from-cyan-50 to-blue-50 border border-cyan-100">
+                    <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-cyan-700">Rich Insights</p>
+                      <p className="text-xs text-cyan-600">Knowledge analytics</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Search Results */}
         {debouncedQuery ? (
           <SearchResults

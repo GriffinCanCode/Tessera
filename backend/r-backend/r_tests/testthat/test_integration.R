@@ -9,12 +9,12 @@ library(jsonlite)
 library(igraph)
 
 # Source the test helpers
-source("helpers/test_helpers.R")
+source("../helpers/test_helpers.R")
 
 # Source all R scripts under test
-graph_env <- source_r_script("../graph_analysis.R")
-layout_env <- source_r_script("../layout_algorithms.R")
-temporal_env <- source_r_script("../temporal_analysis.R")
+graph_env <- source_r_script("../../graph_analysis.R")
+layout_env <- source_r_script("../../layout_algorithms.R")
+temporal_env <- source_r_script("../../temporal_analysis.R")
 
 # Helper functions to access script environments
 get_graph_func <- function(name) get(name, envir = graph_env)

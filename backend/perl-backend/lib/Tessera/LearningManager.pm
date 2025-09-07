@@ -347,7 +347,7 @@ sub get_learning_recommendations {
     $limit ||= 5;
     my $dbh = $self->storage->dbh;
     
-    # Recommend content based on difficulty progression and completion status
+    # Recommend content based on weighted importance and completion status
     my $sql = qq{
         SELECT 
             lc.*,
@@ -356,17 +356,61 @@ sub get_learning_recommendations {
                 WHEN lc.completion_percentage = 0 THEN 'new'
                 WHEN lc.completion_percentage < 100 THEN 'continue'
                 ELSE 'review'
-            END as recommendation_type,
-            (cs.relevance_score * (101 - lc.completion_percentage) * 
-             CASE WHEN lc.difficulty_level <= 3 THEN 2 ELSE 1 END) as priority_score
+            END as recommendation_type
         FROM learning_content lc
         JOIN content_subjects cs ON lc.id = cs.content_id
         WHERE cs.subject_id = ? AND lc.completion_percentage < 100
-        ORDER BY priority_score DESC, lc.difficulty_level ASC
+        ORDER BY lc.difficulty_level ASC
         LIMIT ?
     };
     
-    return $dbh->selectall_arrayref($sql, {Slice => {}}, $subject_id, $limit);
+    my $content_items = $dbh->selectall_arrayref($sql, {Slice => {}}, $subject_id, $limit * 2);
+    
+    # Calculate weighted priority scores
+    for my $item (@$content_items) {
+        my $weight = $self->_calculate_content_weight($item);
+        my $completion_factor = (101 - ($item->{completion_percentage} || 0)) / 100;
+        my $difficulty_bonus = $item->{difficulty_level} <= 3 ? 1.5 : 1.0;
+        
+        $item->{priority_score} = $weight * $completion_factor * $difficulty_bonus * ($item->{relevance_score} || 1.0);
+    }
+    
+    # Sort by weighted priority and return top items
+    @$content_items = sort { $b->{priority_score} <=> $a->{priority_score} } @$content_items;
+    splice(@$content_items, $limit) if @$content_items > $limit;
+    
+    return $content_items;
+}
+
+# Calculate content weight based on length, difficulty, and type
+sub _calculate_content_weight {
+    my ($self, $content_item) = @_;
+    
+    my $base_weight = 1.0;
+    
+    # Length factor (log scale to prevent huge articles from dominating)
+    my $content_text = $content_item->{content} || $content_item->{summary} || '';
+    my $content_length = length($content_text);
+    $content_length = 100 if $content_length == 0;  # Default for empty content
+    
+    my $length_factor = log($content_length + 1) / log(1000);  # Normalized to ~1000 char baseline
+    
+    # Difficulty factor
+    my $difficulty_factor = ($content_item->{difficulty_level} || 3) / 3.0;
+    
+    # Content type factor
+    my %type_factors = (
+        'book' => 2.0,
+        'course' => 1.8,
+        'article' => 1.0,
+        'video' => 0.8,
+        'youtube' => 0.6,
+        'text' => 0.4,
+        'poetry' => 0.3,
+    );
+    my $type_factor = $type_factors{$content_item->{content_type} || 'article'} || 1.0;
+    
+    return $base_weight * $length_factor * $difficulty_factor * $type_factor;
 }
 
 # Utility functions

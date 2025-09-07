@@ -43,7 +43,7 @@ export interface IngestionResult {
 
 // Configure axios instance
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: '/api',  // Use /api prefix to route through Vite proxy to Perl backend
   timeout: 120000, // 2 minutes timeout for crawl operations
   headers: {
     'Content-Type': 'application/json',
@@ -362,11 +362,121 @@ export class TesseraAPI {
       balance_score: number;
       growth_rate: number;
       total_time_minutes: number;
+      knowledge_velocity: number;
     };
     count: number;
   }>> {
     const response = await api.get('/learning/analytics');
     return response.data;
+  }
+
+  // Brain visualization data - transforms learning analytics into brain visualization format
+  static async getBrainData(): Promise<ApiResponse<{
+    areas: Array<{
+      id: string;
+      name: string;
+      percentage: number;
+      color: string;
+      timeSpent: number;
+      totalContent: number;
+      completedContent: number;
+      region: 'frontal' | 'parietal' | 'temporal' | 'occipital' | 'cerebellum' | 'brainstem' | 'limbic';
+      position3D: { x: number; y: number; z: number };
+      scale: number;
+      connections: string[];
+    }>;
+    stats: {
+      totalKnowledgePoints: number;
+      dominantArea: string;
+      balanceScore: number;
+      growthRate: number;
+    };
+  }>> {
+    return measureAsyncPerformance('API Get Brain Data', async () => {
+      apiLogger.logApiRequest('GET', '/learning/analytics', {});
+      
+      const response = await api.get('/learning/analytics');
+      
+      apiLogger.logApiResponse('GET', '/learning/analytics', response.status, undefined, {
+        subjects: response.data.data?.subjects?.length || 0
+      });
+      
+      // Transform the learning analytics data into brain visualization format
+      const analyticsData = response.data.data;
+      
+      if (!analyticsData || !analyticsData.subjects) {
+        throw new Error('No learning analytics data available');
+      }
+
+      // Define brain region mappings and 3D positions
+      const brainRegions = [
+        { region: 'frontal' as const, position: { x: 0.8, y: 0.3, z: 1.4 } },
+        { region: 'parietal' as const, position: { x: -0.6, y: 1.2, z: 0.2 } },
+        { region: 'temporal' as const, position: { x: 1.4, y: -0.2, z: 0.6 } },
+        { region: 'occipital' as const, position: { x: -0.4, y: 0.6, z: -1.3 } },
+        { region: 'limbic' as const, position: { x: 0.3, y: -0.6, z: 0.8 } },
+        { region: 'cerebellum' as const, position: { x: -0.2, y: -1.4, z: -0.6 } },
+        { region: 'brainstem' as const, position: { x: 0.0, y: -1.8, z: 0.0 } }
+      ];
+
+      // Default colors for subjects
+      const defaultColors = [
+        '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', 
+        '#ef4444', '#06b6d4', '#84cc16', '#f97316',
+        '#ec4899', '#6366f1', '#14b8a6', '#eab308'
+      ];
+
+      // Transform subjects into knowledge areas
+      const areas = analyticsData.subjects.map((subject: Record<string, unknown>, index: number) => {
+        const regionIndex = index % brainRegions.length;
+        const region = brainRegions[regionIndex];
+        
+        // Calculate activity percentage based on completion
+        const activityPercentage = Math.min(100, Math.max(10, (subject.avg_completion as number) || 0));
+        
+        // Use subject color if available, otherwise use default
+        const color = (subject.color as string) || defaultColors[index % defaultColors.length];
+        
+        // Calculate connections (simple algorithm based on subject similarity)
+        const connections: string[] = [];
+        if (index > 0) connections.push((index - 1).toString());
+        if (index < analyticsData.subjects.length - 1) connections.push((index + 1).toString());
+        
+        return {
+          id: subject.id?.toString() || index.toString(),
+          name: (subject.name as string) || `Subject ${index + 1}`,
+          percentage: Math.round(activityPercentage),
+          color: color,
+          timeSpent: Math.round(((subject.total_time as number) || 0) / 60), // Convert minutes to hours
+          totalContent: (subject.total_content as number) || 0,
+          completedContent: (subject.completed_content as number) || 0,
+          region: region.region,
+          position3D: {
+            x: region.position.x + (Math.random() - 0.5) * 0.3, // Add slight randomization
+            y: region.position.y + (Math.random() - 0.5) * 0.3,
+            z: region.position.z + (Math.random() - 0.5) * 0.3
+          },
+          scale: 1.0,
+          connections: connections
+        };
+      });
+
+      // Transform brain stats
+      const stats = {
+        totalKnowledgePoints: analyticsData.brain_stats?.total_knowledge_points || 0,
+        dominantArea: analyticsData.brain_stats?.dominant_area || '',
+        balanceScore: analyticsData.brain_stats?.balance_score || 0,
+        growthRate: analyticsData.brain_stats?.growth_rate || 0
+      };
+
+      return {
+        success: true,
+        data: {
+          areas,
+          stats
+        }
+      };
+    }, apiLogger);
   }
 
   static async getLearningContent(subjectId?: number, limit = 50): Promise<ApiResponse<{ content: Record<string, unknown>[]; count: number }>> {

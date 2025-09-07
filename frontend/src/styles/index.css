@@ -8,6 +8,7 @@
 @import './dashboard.css';
 @import './layout.css';
 @import './search.css';
+@import './navigation.css';
 
 /* Additional utility exports for specific use cases */
 @layer utilities {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Header } from './Header';
+import { SubNavigation } from './SubNavigation';
 import { useAppStore, type ViewType } from '../../stores';
 
 interface LayoutProps {
@@ -18,6 +19,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="layout-container">
       <Header currentView={currentView} onViewChange={handleViewChange} />
+      <SubNavigation currentView={currentView} onViewChange={handleViewChange} />
       <main className={`main-content animate-fade-in ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {globalLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

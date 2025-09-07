@@ -1,11 +1,19 @@
 #!/usr/bin/env Rscript
 
 # Advanced Layout Algorithms for Tessera Knowledge Graph
-# Specialized R script for graph layout calculations
+# Specialized R script for graph layout calculations with Zig acceleration
 
 suppressPackageStartupMessages({
     library(igraph)
     library(jsonlite)
+})
+
+# Load Zig optimizations (with fallback)
+tryCatch({
+    source("../zig-backend/lib/ffi/r/zig_vector_ops.R")
+    source("../zig-backend/lib/ffi/r/zig_graph_ops.R")
+}, error = function(e) {
+    message("Zig optimizations not available for layout algorithms, using R implementations")
 })
 
 # Main function to calculate advanced layouts
@@ -108,13 +116,48 @@ calculate_advanced_layouts <- function(json_input) {
     })
 }
 
-# Fruchterman-Reingold with optimized parameters
+# Fruchterman-Reingold with Zig acceleration and optimized parameters
 calculate_fr_layout <- function(g) {
     n <- vcount(g)
     
     # Optimize parameters based on graph size
     niter <- if (n < 100) 500 else if (n < 500) 300 else 100
     
+    # Use Zig-accelerated layout optimization for medium to large graphs
+    # where custom force calculations provide benefits over igraph's optimized algorithms
+    use_zig <- exists("is_zig_available") && is_zig_available() && n <= 1000 && n > 200
+    
+    if (use_zig) {
+        tryCatch({
+            # Start with standard FR layout
+            initial_layout <- layout_with_fr(
+                g,
+                niter = max(50, niter / 4),  # Fewer initial iterations
+                start.temp = sqrt(n),
+                grid = "nogrid",
+                weights = E(g)$weight
+            )
+            
+            # Get adjacency matrix for Zig optimization
+            adj_matrix <- as.matrix(as_adjacency_matrix(g, type = "both", attr = "weight"))
+            
+            # Apply Zig-accelerated force optimization
+            k <- sqrt(1.0 / n)  # Optimal distance parameter
+            optimized_layout <- enhanced_layout_optimization(
+                initial_layout, 
+                adj_matrix, 
+                k = k, 
+                iterations = niter
+            )
+            
+            return(list(x = optimized_layout[, 1], y = optimized_layout[, 2]))
+        }, error = function(e) {
+            message(paste("Zig layout optimization failed, using standard FR:", e$message))
+            # Fallback to standard implementation
+        })
+    }
+    
+    # Standard igraph implementation with optimizations
     layout <- layout_with_fr(
         g,
         niter = niter,
@@ -123,8 +166,8 @@ calculate_fr_layout <- function(g) {
         weights = E(g)$weight
     )
     
-    # Apply edge-length optimization
-    layout <- optimize_edge_lengths(g, layout)
+    # Apply vectorized edge-length optimization
+    layout <- optimize_edge_lengths_vectorized(g, layout)
     
     return(list(x = layout[, 1], y = layout[, 2]))
 }
@@ -361,45 +404,50 @@ calculate_physics_layout <- function(g) {
     return(list(x = layout[, 1], y = layout[, 2]))
 }
 
-# Optimize edge lengths in existing layout
-optimize_edge_lengths <- function(g, layout) {
+# Vectorized edge-length optimization
+optimize_edge_lengths_vectorized <- function(g, layout) {
     edges <- as_edgelist(g, names = FALSE)
     weights <- E(g)$weight
     
     if (is.null(weights)) weights <- rep(1, nrow(edges))
+    if (nrow(edges) == 0) return(layout)
     
-    # Calculate current edge lengths
-    current_lengths <- rep(0, nrow(edges))
-    for (i in 1:nrow(edges)) {
-        v1 <- edges[i, 1]
-        v2 <- edges[i, 2]
-        diff <- layout[v1, ] - layout[v2, ]
-        current_lengths[i] <- sqrt(sum(diff^2))
-    }
+    # Vectorized calculation of current edge lengths
+    v1_coords <- layout[edges[, 1], , drop = FALSE]
+    v2_coords <- layout[edges[, 2], , drop = FALSE]
+    diff_coords <- v1_coords - v2_coords
+    current_lengths <- sqrt(rowSums(diff_coords^2))
     
     # Target lengths based on weights (inverse relationship)
     target_lengths <- 1 / (weights + 0.1)
     target_lengths <- target_lengths / mean(target_lengths) * mean(current_lengths)
     
-    # Apply small adjustments
+    # Vectorized adjustments
     adjustment_factor <- 0.1
-    for (i in 1:nrow(edges)) {
-        v1 <- edges[i, 1]
-        v2 <- edges[i, 2]
+    valid_edges <- current_lengths > 0
+    
+    if (any(valid_edges)) {
+        adjustments <- (target_lengths[valid_edges] - current_lengths[valid_edges]) * adjustment_factor
+        directions <- diff_coords[valid_edges, , drop = FALSE] / current_lengths[valid_edges]
         
-        current_length <- current_lengths[i]
-        target_length <- target_lengths[i]
+        # Apply adjustments
+        edge_adjustments <- directions * adjustments * 0.5
         
-        if (current_length > 0) {
-            adjustment <- (target_length - current_length) * adjustment_factor
-            direction <- (layout[v2, ] - layout[v1, ]) / current_length
-            
-            layout[v1, ] <- layout[v1, ] + direction * adjustment * 0.5
-            layout[v2, ] <- layout[v2, ] - direction * adjustment * 0.5
+        # Update positions (vectorized)
+        for (i in which(valid_edges)) {
+            v1 <- edges[i, 1]
+            v2 <- edges[i, 2]
+            layout[v1, ] <- layout[v1, ] + edge_adjustments[sum(valid_edges[1:i]), ]
+            layout[v2, ] <- layout[v2, ] - edge_adjustments[sum(valid_edges[1:i]), ]
         }
     }
     
     return(layout)
+}
+
+# Legacy function for backward compatibility
+optimize_edge_lengths <- function(g, layout) {
+    return(optimize_edge_lengths_vectorized(g, layout))
 }
 
 # Recommend best layout based on graph properties

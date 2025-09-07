@@ -45,129 +45,246 @@ function GraphControls({
   return (
     <div className="absolute top-4 right-4 z-10 space-y-2">
       {/* Graph Settings Panel */}
-      <div className="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 shadow-lg p-4 space-y-4">
-        <h3 className="font-semibold text-sm text-slate-800">Graph Settings</h3>
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg p-4 space-y-4">
+        <h3 className="font-semibold text-sm text-slate-800 tracking-wide">Graph Settings</h3>
         
         {/* Relevance Filter */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600">
-            Min Relevance: {Math.round(minRelevance * 100)}%
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={minRelevance}
-            onChange={(e) => onMinRelevanceChange(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer
-                     slider:bg-gradient-to-r slider:from-purple-500 slider:to-pink-500"
-          />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-700 tracking-wide">Min Relevance</label>
+            <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+              {Math.round(minRelevance * 100)}%
+            </span>
+          </div>
+          <div className="relative">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={minRelevance}
+              onChange={(e) => onMinRelevanceChange(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                       slider:bg-gradient-to-r slider:from-purple-500 slider:to-pink-500
+                       focus:outline-none focus:ring-2 focus:ring-purple-300 focus:ring-offset-1"
+            />
+            <div className="absolute -top-1 left-0 w-full h-4 pointer-events-none">
+              <div 
+                className="absolute top-0 h-4 w-4 bg-gradient-to-r from-purple-500 to-pink-500 
+                         rounded-full shadow-md transform -translate-x-2 transition-all duration-200"
+                style={{ left: `${minRelevance * 100}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
 
         {/* Max Depth */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600">
-            Max Depth: {maxDepth}
-          </label>
-          <input
-            type="range"
-            min="1"
-            max="5"
-            step="1"
-            value={maxDepth}
-            onChange={(e) => onMaxDepthChange(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer
-                     slider:bg-gradient-to-r slider:from-blue-500 slider:to-teal-500"
-          />
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-slate-700 tracking-wide">Max Depth</label>
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+              {maxDepth}
+            </span>
+          </div>
+          <div className="relative">
+            <input
+              type="range"
+              min="1"
+              max="5"
+              step="1"
+              value={maxDepth}
+              onChange={(e) => onMaxDepthChange(Number(e.target.value))}
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer
+                       slider:bg-gradient-to-r slider:from-blue-500 slider:to-teal-500
+                       focus:outline-none focus:ring-2 focus:ring-blue-300 focus:ring-offset-1"
+            />
+            <div className="absolute -top-1 left-0 w-full h-4 pointer-events-none">
+              <div 
+                className="absolute top-0 h-4 w-4 bg-gradient-to-r from-blue-500 to-teal-500 
+                         rounded-full shadow-md transform -translate-x-2 transition-all duration-200"
+                style={{ left: `${((maxDepth - 1) / 4) * 100}%` }}
+              ></div>
+            </div>
+          </div>
         </div>
 
         {/* Layout Algorithm Selection */}
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-slate-600">
-            Layout Algorithm
-          </label>
-          <select
-            value={selectedLayout}
-            onChange={(e) => onLayoutChange(e.target.value)}
-            className="w-full px-2 py-1 text-xs bg-white border border-slate-200 rounded-lg
-                     focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            {availableLayouts.map(layout => (
-              <option key={layout} value={layout}>
-                {layout.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-              </option>
-            ))}
-          </select>
+        <div className="space-y-3">
+          <label className="text-xs font-semibold text-slate-700 tracking-wide">Layout Algorithm</label>
+          <div className="relative">
+            <select
+              value={selectedLayout}
+              onChange={(e) => onLayoutChange(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm bg-white/90 border border-slate-200/60 rounded-xl 
+                       focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400
+                       hover:bg-white hover:border-slate-300/80 transition-all duration-200
+                       appearance-none cursor-pointer font-medium text-slate-700"
+            >
+              {availableLayouts.map(layout => (
+                <option key={layout} value={layout}>
+                  {layout.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+              <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
           
           {/* Show recommendations if available */}
           {layoutRecommendations && (
-            <div className="text-xs text-slate-500 mt-1">
-              💡 Recommended: {Object.values(layoutRecommendations).flat().slice(0, 2).join(', ')}
+            <div className="mt-3 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-200/60">
+              <div className="flex items-center space-x-2 mb-2">
+                <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <p className="text-xs text-emerald-700 font-semibold tracking-wide">Layout Tips</p>
+              </div>
+              <p className="text-xs text-emerald-600 font-medium">
+                {Object.values(layoutRecommendations).flat().slice(0, 2).join(', ')}
+              </p>
             </div>
           )}
         </div>
       </div>
 
       {/* Control Buttons */}
-      <div className="bg-white/90 backdrop-blur-md rounded-xl border border-white/20 shadow-lg p-3">
-        <div className="grid grid-cols-2 gap-2 mb-3">
+      <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-lg p-5 overflow-hidden">
+        <h4 className="text-xs font-semibold text-slate-700 mb-4 tracking-wide">Graph Controls</h4>
+        
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <button
             onClick={onZoomIn}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 
-                     text-white font-medium text-sm hover:from-blue-600 hover:to-purple-600 
-                     transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+            className="group relative flex items-center justify-center w-12 h-12 rounded-xl 
+                     border border-blue-200/60 bg-white/90 hover:bg-white transition-all duration-300 
+                     shadow-sm hover:shadow-md transform hover:scale-105 overflow-hidden"
             title="Zoom In"
           >
-            +
+            {/* Hover glow effect - contained within button */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative flex items-center justify-center">
+              <span className="text-blue-600 group-hover:text-blue-700 font-bold text-xl transition-colors duration-300">+</span>
+            </div>
+            
+            {/* Active indicator */}
+            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-blue-400/60 rounded-full 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
+          
           <button
             onClick={onZoomOut}
-            className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 
-                     text-white font-medium text-sm hover:from-slate-600 hover:to-slate-700 
-                     transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105"
+            className="group relative flex items-center justify-center w-12 h-12 rounded-xl 
+                     border border-slate-200/60 bg-white/90 hover:bg-white transition-all duration-300 
+                     shadow-sm hover:shadow-md transform hover:scale-105 overflow-hidden"
             title="Zoom Out"
           >
-            −
+            {/* Hover glow effect - contained within button */}
+            <div className="absolute inset-0 bg-gradient-to-r from-slate-500/10 to-slate-600/10 rounded-xl 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative flex items-center justify-center">
+              <span className="text-slate-600 group-hover:text-slate-700 font-bold text-xl transition-colors duration-300">−</span>
+            </div>
+            
+            {/* Active indicator */}
+            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-slate-400/60 rounded-full 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
         </div>
         
         <button
           onClick={onCenterClick}
-          className="w-full px-3 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-cyan-500 
-                   text-white font-medium text-xs hover:from-teal-600 hover:to-cyan-600 
-                   transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105 mb-2"
+          className="group relative w-full px-4 py-3 rounded-xl mb-4
+                   border border-teal-200/60 bg-white/90 hover:bg-white transition-all duration-300 
+                   shadow-sm hover:shadow-md transform hover:scale-[1.02] overflow-hidden"
         >
-          Center Graph
+          {/* Hover glow effect - contained within button */}
+          <div className="absolute inset-0 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 rounded-xl 
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          
+          <div className="relative flex items-center justify-center space-x-2">
+            <svg className="w-4 h-4 text-teal-600 group-hover:text-teal-700 transition-colors duration-300" 
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
+            </svg>
+            <span className="text-teal-700 group-hover:text-teal-800 font-semibold text-sm transition-colors duration-300">
+              Center Graph
+            </span>
+          </div>
+          
+          {/* Active indicator */}
+          <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-teal-400/60 rounded-full 
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         </button>
 
         {/* Export Dropdown */}
         <div className="relative group">
-          <button className="w-full px-3 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 
-                           text-white font-medium text-xs hover:from-pink-600 hover:to-rose-600 
-                           transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-105">
-            Export ↓
+          <button className="group relative w-full px-4 py-3 rounded-xl
+                           border border-pink-200/60 bg-white/90 hover:bg-white transition-all duration-300 
+                           shadow-sm hover:shadow-md transform hover:scale-[1.02] overflow-hidden">
+            {/* Hover glow effect - contained within button */}
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 to-rose-500/10 rounded-xl 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            <div className="relative flex items-center justify-center space-x-2">
+              <svg className="w-4 h-4 text-pink-600 group-hover:text-pink-700 transition-colors duration-300" 
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="text-pink-700 group-hover:text-pink-800 font-semibold text-sm transition-colors duration-300">
+                Export
+              </span>
+              <svg className="w-3 h-3 text-pink-600 group-hover:text-pink-700 transition-all duration-300 group-hover:rotate-180" 
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+            
+            {/* Active indicator */}
+            <div className="absolute top-2 right-2 w-1.5 h-1.5 bg-pink-400/60 rounded-full 
+                          opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
-          <div className="absolute top-full mt-1 left-0 right-0 bg-white rounded-lg shadow-xl border 
-                        border-white/20 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-            <button
-              onClick={() => onExport('json')}
-              className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 rounded-t-lg"
-            >
-              JSON
-            </button>
-            <button
-              onClick={() => onExport('svg')}
-              className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50"
-            >
-              SVG
-            </button>
-            <button
-              onClick={() => onExport('png')}
-              className="w-full px-3 py-2 text-xs text-left hover:bg-slate-50 rounded-b-lg"
-            >
-              PNG
-            </button>
+          
+          <div className="absolute top-full mt-2 left-0 right-0 bg-white/95 backdrop-blur-md rounded-xl 
+                        border border-white/20 shadow-xl opacity-0 group-hover:opacity-100 
+                        transition-all duration-300 transform translate-y-1 group-hover:translate-y-0 z-20">
+            <div className="p-2 space-y-1">
+              <button
+                onClick={() => onExport('json')}
+                className="group/item w-full px-3 py-2 text-sm text-left rounded-lg
+                         hover:bg-slate-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span className="text-slate-600 group-hover/item:text-slate-800 font-medium">JSON</span>
+                <span className="text-xs text-slate-400 group-hover/item:text-slate-500">Data format</span>
+              </button>
+              <button
+                onClick={() => onExport('svg')}
+                className="group/item w-full px-3 py-2 text-sm text-left rounded-lg
+                         hover:bg-slate-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span className="text-slate-600 group-hover/item:text-slate-800 font-medium">SVG</span>
+                <span className="text-xs text-slate-400 group-hover/item:text-slate-500">Vector image</span>
+              </button>
+              <button
+                onClick={() => onExport('png')}
+                className="group/item w-full px-3 py-2 text-sm text-left rounded-lg
+                         hover:bg-slate-50 transition-all duration-200 flex items-center space-x-2"
+              >
+                <span className="text-slate-600 group-hover/item:text-slate-800 font-medium">PNG</span>
+                <span className="text-xs text-slate-400 group-hover/item:text-slate-500">Raster image</span>
+              </button>
+            </div>
+            
+            {/* Dropdown arrow */}
+            <div className="absolute -top-1 left-1/2 transform -translate-x-1/2 w-2 h-2 
+                          bg-white/95 border-l border-t border-white/20 rotate-45"></div>
           </div>
         </div>
       </div>
@@ -227,6 +344,7 @@ export function KnowledgeGraph() {
   
   const svgRef = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<d3.Simulation<GraphNodeData, undefined> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
 
   // Query for knowledge graph data
@@ -395,6 +513,14 @@ export function KnowledgeGraph() {
 
       svg.call(zoom as any); // eslint-disable-line @typescript-eslint/no-explicit-any
 
+      // Add click handler to SVG to clear tooltip when clicking on empty space
+      svg.on('click', (event) => {
+        // Only clear tooltip if clicking on the SVG itself (not on nodes)
+        if (event.target === svg.node()) {
+          setTooltip(prev => prev ? { ...prev, visible: false } : null);
+        }
+      });
+
       // Create links
       const link = g.selectAll('.link')
         .data(edges)
@@ -453,7 +579,8 @@ export function KnowledgeGraph() {
 
       // Add click and hover events
       node
-        .on('click', (_event, d) => {
+        .on('click', (event, d) => {
+          event.stopPropagation(); // Prevent SVG click handler from firing
           setSelectedNode(d);
           setCenterArticleId(d.id);
         })
@@ -467,6 +594,10 @@ export function KnowledgeGraph() {
           });
         })
         .on('mouseleave', () => {
+          setTooltip(prev => prev ? { ...prev, visible: false } : null);
+        })
+        .on('mouseout', () => {
+          // Additional handler for more reliable tooltip clearing
           setTooltip(prev => prev ? { ...prev, visible: false } : null);
         });
 
@@ -484,6 +615,32 @@ export function KnowledgeGraph() {
       simulationRef.current = simulation;
     });
   }, [processedData, selectedLayout]);
+
+  // Add global click handler to clear tooltip when clicking outside
+  useEffect(() => {
+    const handleGlobalClick = (event: MouseEvent) => {
+      if (tooltip?.visible && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setTooltip(prev => prev ? { ...prev, visible: false } : null);
+      }
+    };
+
+    const handleGlobalPointerMove = (event: PointerEvent) => {
+      // Clear tooltip if pointer moves outside the container
+      if (tooltip?.visible && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setTooltip(prev => prev ? { ...prev, visible: false } : null);
+      }
+    };
+
+    if (tooltip?.visible) {
+      document.addEventListener('click', handleGlobalClick);
+      document.addEventListener('pointermove', handleGlobalPointerMove);
+      
+      return () => {
+        document.removeEventListener('click', handleGlobalClick);
+        document.removeEventListener('pointermove', handleGlobalPointerMove);
+      };
+    }
+  }, [tooltip?.visible]);
 
   const handleCenterGraph = useCallback(() => {
     if (!svgRef.current || !simulationRef.current) return;
@@ -600,13 +757,22 @@ export function KnowledgeGraph() {
   }
 
   return (
-    <div className="relative w-full h-[700px] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 rounded-xl overflow-hidden">
+    <div 
+      ref={containerRef}
+      className="relative w-full h-[700px] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 rounded-xl overflow-hidden"
+    >
       {/* Graph Visualization */}
       <svg
         ref={svgRef}
         width="100%"
         height="100%"
         className="cursor-move"
+        onClick={(e) => {
+          // Clear tooltip when clicking on empty space in SVG
+          if (e.target === e.currentTarget) {
+            setTooltip(prev => prev ? { ...prev, visible: false } : null);
+          }
+        }}
       />
 
       {/* Controls */}
@@ -636,20 +802,36 @@ export function KnowledgeGraph() {
       )}
 
       {/* Graph Statistics */}
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-md rounded-lg 
-                    border border-white/20 shadow-lg p-3">
-        <div className="text-xs text-slate-600 space-y-1">
-          <div>Nodes: {processedData.nodes.length}</div>
-          <div>Edges: {processedData.edges.length}</div>
-          <div>Scale: {Math.round(transform.scale * 100)}%</div>
+      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-md rounded-2xl 
+                    border border-white/20 shadow-lg p-4">
+        <h4 className="text-xs font-semibold text-slate-700 mb-3 tracking-wide">Graph Stats</h4>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600">Nodes</span>
+            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
+              {processedData.nodes.length}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600">Edges</span>
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+              {processedData.edges.length}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-600">Scale</span>
+            <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">
+              {Math.round(transform.scale * 100)}%
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Legend */}
-      <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-md rounded-lg 
-                    border border-white/20 shadow-lg p-3">
-        <h4 className="text-xs font-semibold text-slate-800 mb-2">Node Types</h4>
-        <div className="space-y-1 text-xs">
+      <div className="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md rounded-2xl 
+                    border border-white/20 shadow-lg p-4">
+        <h4 className="text-xs font-semibold text-slate-700 mb-3 tracking-wide">Node Types</h4>
+        <div className="space-y-2">
           {Object.entries({
             person: '👤 Person',
             place: '📍 Place', 
@@ -659,19 +841,21 @@ export function KnowledgeGraph() {
             technology: '⚡ Technology',
             general: '📄 General'
           }).map(([type, label]) => (
-            <div key={type} className="flex items-center space-x-2">
+            <div key={type} className="flex items-center space-x-3 group hover:bg-slate-50/80 
+                                     rounded-lg px-2 py-1 transition-all duration-200">
               <div 
-                className={`w-3 h-3 rounded-full ${
-                  type === 'person' ? 'bg-purple-500' :
-                  type === 'place' ? 'bg-green-500' :
-                  type === 'concept' ? 'bg-yellow-500' :
-                  type === 'organization' ? 'bg-blue-500' :
-                  type === 'event' ? 'bg-red-500' :
-                  type === 'technology' ? 'bg-orange-500' :
-                  'bg-gray-500'
+                className={`w-3 h-3 rounded-full shadow-sm group-hover:scale-110 transition-transform duration-200 ${
+                  type === 'person' ? 'bg-gradient-to-r from-purple-500 to-purple-600' :
+                  type === 'place' ? 'bg-gradient-to-r from-green-500 to-green-600' :
+                  type === 'concept' ? 'bg-gradient-to-r from-yellow-500 to-yellow-600' :
+                  type === 'organization' ? 'bg-gradient-to-r from-blue-500 to-blue-600' :
+                  type === 'event' ? 'bg-gradient-to-r from-red-500 to-red-600' :
+                  type === 'technology' ? 'bg-gradient-to-r from-orange-500 to-orange-600' :
+                  'bg-gradient-to-r from-gray-500 to-gray-600'
                 }`}
               />
-              <span className="text-slate-600">{label}</span>
+              <span className="text-xs font-medium text-slate-600 group-hover:text-slate-800 
+                             transition-colors duration-200">{label}</span>
             </div>
           ))}
         </div>
