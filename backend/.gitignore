@@ -1,0 +1,364 @@
+# ==============================================
+# Backend .gitignore for Wikilizer
+# Covers Perl, Python, R, and general files
+# ==============================================
+
+# Python specific
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+knowledge_bot/venv/
+
+# Python IDE
+.spyderproject
+.spyproject
+.rope_project_settings
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.env.local
+.env.development
+.env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ==============================================
+# Perl specific
+# ==============================================
+
+# Build artifacts
+Makefile.old
+Build
+Build.bat
+_build/
+blib/
+pm_to_blib
+cover_db/
+
+# Installation artifacts
+.build/
+inc/
+local/
+
+# CPAN build artifacts
+MANIFEST.bak
+META.yml
+META.json
+MYMETA.yml
+MYMETA.json
+.last_cover_stats
+
+# Perl critic
+.perlcriticrc
+
+# Perl Tidy
+.perltidyrc
+
+# ==============================================
+# R specific  
+# ==============================================
+
+# History files
+.Rhistory
+.Rapp.history
+
+# Session Data files
+.RData
+.RDataTmp
+
+# User-specific files
+.Ruserdata
+
+# Example code in package build process
+*-Ex.R
+
+# Output files from R CMD build
+/*.tar.gz
+
+# Output files from R CMD check
+/*.Rcheck/
+
+# RStudio files
+.Rproj.user/
+
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+
+# R Environment Variables
+.Renviron
+
+# pkgdown site
+docs/
+
+# translation temp files
+po/*~
+
+# ==============================================
+# Logs and temporary files
+# ==============================================
+
+# Log files
+*.log
+logs/
+api_server.log
+wikicrawler.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage
+.grunt
+
+# Bower dependency directory
+bower_components
+
+# ==============================================
+# Database and data files
+# ==============================================
+
+# SQLite databases (keep structure files, ignore actual data)
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Data exports and cache
+data/exports/
+data/cache/
+data/tmp/
+*.dump
+
+# ==============================================
+# IDE and Editor files
+# ==============================================
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Atom
+.atom/
+
+# ==============================================
+# OS specific files
+# ==============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==============================================
+# Security and credentials
+# ==============================================
+
+# API keys and secrets
+*.pem
+*.key
+*.crt
+*.p12
+secrets.yaml
+secrets.yml
+.secrets
+credentials.json
+service-account.json
+
+# SSH keys
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+
+# ==============================================
+# Testing and CI
+# ==============================================
+
+# Test coverage
+cover_db/
+.cover_db/
+.prove
+.proverc
+
+# Test artifacts
+test-reports/
+test-results/
+*.tap
+
+# ==============================================
+# Backup and temporary files
+# ==============================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Archive files (usually shouldn't be in git)
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.rar
+*.7z
+
+# ==============================================
+# Project specific
+# ==============================================
+
+# Knowledge bot cache
+knowledge_bot/cache/
+knowledge_bot/.cache/
+
+# Crawler temporary files
+crawl_temp/
+.crawl_cache/
+
+# Analysis outputs
+analysis_output/
+reports/
+
+# Configuration files with sensitive data (keep templates)
+*config.local.*
+*config.secret.*

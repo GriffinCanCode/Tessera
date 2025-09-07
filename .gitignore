@@ -1,0 +1,53 @@
+# Development server logs
+*.log
+logs/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Perl specific
+blib/
+.build/
+_build/
+cover_db/
+inc/
+Build
+Build.bat
+.last_cover_stats
+Makefile.old
+MANIFEST.bak
+META.yml
+META.json
+MYMETA.yml
+MYMETA.json
+pm_to_blib
+
+# Database files (keep structure, ignore data)
+*.db-journal
+backend/data/exports/
+
+# Process IDs
+*.pid

@@ -1,0 +1,13 @@
+# Test dependencies for WikiCrawler
+# Install with: cpanm --installdeps . --with-feature test
+
+requires 'Test::More';
+requires 'Test::Exception';
+requires 'Test::MockObject';
+requires 'Test::Mojo';
+
+# Development and debugging
+recommends 'Test::Pod';
+recommends 'Test::Pod::Coverage';
+recommends 'Devel::Cover';
+recommends 'Devel::NYTProf';

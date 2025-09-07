@@ -1,0 +1,394 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use v5.20;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+
+use WikiCrawler;
+use Getopt::Long qw(GetOptions);
+use Pod::Usage qw(pod2usage);
+use JSON::XS;
+
+# Command-line options
+my %opts = (
+    config => "$FindBin::Bin/../config/crawler.yaml",
+    interests => [],
+    max_depth => 3,
+    max_articles => 100,
+    min_relevance => 0.3,
+    output_format => 'json',
+    verbose => 0,
+    help => 0,
+    man => 0,
+);
+
+GetOptions(
+    'config|c=s' => \$opts{config},
+    'start-url|u=s' => \$opts{start_url},
+    'start-title|t=s' => \$opts{start_title},
+    'interests|i=s@' => $opts{interests},
+    'max-depth|d=i' => \$opts{max_depth},
+    'max-articles|a=i' => \$opts{max_articles},
+    'min-relevance|r=f' => \$opts{min_relevance},
+    'output|o=s' => \$opts{output},
+    'format|f=s' => \$opts{output_format},
+    'export-graph|g=s' => \$opts{export_graph},
+    'search|s=s' => \$opts{search},
+    'stats' => \$opts{stats},
+    'cleanup=i' => \$opts{cleanup},
+    'verbose|v' => \$opts{verbose},
+    'help|h' => \$opts{help},
+    'man' => \$opts{man},
+) or pod2usage(2);
+
+pod2usage(1) if $opts{help};
+pod2usage(-verbose => 2) if $opts{man};
+
+# Initialize WikiCrawler
+my $crawler = WikiCrawler->new(config_file => $opts{config});
+
+# Handle different operations
+if ($opts{stats}) {
+    show_stats($crawler);
+} elsif ($opts{search}) {
+    search_articles($crawler, $opts{search});
+} elsif ($opts{cleanup}) {
+    cleanup_data($crawler, $opts{cleanup});
+} elsif ($opts{export_graph}) {
+    export_knowledge_graph($crawler, $opts{export_graph});
+} elsif ($opts{start_url} || $opts{start_title}) {
+    start_crawling($crawler, \%opts);
+} else {
+    pod2usage("Error: You must specify an operation (--start-url, --search, --stats, etc.)\n");
+}
+
+# Crawling operation
+sub start_crawling {
+    my ($crawler, $opts) = @_;
+    
+    my $start_url = $opts->{start_url};
+    
+    # Convert title to URL if needed
+    if ($opts->{start_title} && !$start_url) {
+        $start_url = $crawler->crawler->title_to_url($opts->{start_title});
+        print "Starting from title: $opts->{start_title}\n" if $opts->{verbose};
+        print "URL: $start_url\n" if $opts->{verbose};
+    }
+    
+    die "Error: No start URL or title specified\n" unless $start_url;
+    
+    # Set interests
+    $crawler->interests($opts->{interests}) if @{$opts->{interests}};
+    
+    print "WikiCrawler starting...\n";
+    print "Start URL: $start_url\n";
+    print "Max depth: $opts->{max_depth}\n";
+    print "Max articles: $opts->{max_articles}\n";
+    print "Interests: " . join(", ", @{$opts->{interests}}) . "\n" if @{$opts->{interests}};
+    print "-" x 50 . "\n";
+    
+    # Start crawling
+    my $stats = $crawler->crawl(
+        start_url => $start_url,
+        max_depth => $opts->{max_depth},
+        max_articles => $opts->{max_articles},
+        interests => $opts->{interests},
+    );
+    
+    print "\nCrawling completed!\n";
+    print_stats($stats);
+    
+    # Save results if output specified
+    if ($opts->{output}) {
+        my $graph = $crawler->build_knowledge_graph(
+            min_relevance => $opts->{min_relevance}
+        );
+        
+        save_output($graph, $opts->{output}, $opts->{output_format});
+        print "Results saved to: $opts->{output}\n";
+    }
+}
+
+# Search operation
+sub search_articles {
+    my ($crawler, $query) = @_;
+    
+    print "Searching for: $query\n";
+    
+    my $results = $crawler->search($query, limit => 20);
+    
+    if (@$results) {
+        print "\nFound " . scalar(@$results) . " articles:\n";
+        print "-" x 50 . "\n";
+        
+        for my $article (@$results) {
+            print "Title: $article->{title}\n";
+            print "URL: $article->{url}\n";
+            if ($article->{summary}) {
+                my $summary = substr($article->{summary}, 0, 200);
+                $summary .= "..." if length($article->{summary}) > 200;
+                print "Summary: $summary\n";
+            }
+            print "\n";
+        }
+    } else {
+        print "No articles found matching: $query\n";
+    }
+}
+
+# Statistics operation
+sub show_stats {
+    my $crawler = shift;
+    
+    my $stats = $crawler->get_stats();
+    
+    print "WikiCrawler Database Statistics\n";
+    print "=" x 40 . "\n";
+    print_stats($stats);
+    
+    # Show recent activity
+    if ($stats->{articles_last_24h}) {
+        print "Recent activity (last 24h): $stats->{articles_last_24h} articles\n";
+    }
+}
+
+# Cleanup operation
+sub cleanup_data {
+    my ($crawler, $keep_days) = @_;
+    
+    print "Cleaning up data older than $keep_days days...\n";
+    
+    my $deleted = $crawler->cleanup($keep_days);
+    
+    print "Cleanup completed. Deleted $deleted old articles.\n";
+}
+
+# Export knowledge graph
+sub export_knowledge_graph {
+    my ($crawler, $filename) = @_;
+    
+    print "Building knowledge graph...\n";
+    
+    my $format = 'json';
+    if ($filename =~ /\.([^.]+)$/) {
+        $format = $1;
+    }
+    
+    unless ($format =~ /^(json|graphml|dot)$/) {
+        die "Error: Unsupported format '$format'. Use json, graphml, or dot.\n";
+    }
+    
+    my $content = $crawler->export_graph(
+        $format,
+        $filename,
+        min_relevance => $opts{min_relevance}
+    );
+    
+    print "Knowledge graph exported to: $filename\n";
+    
+    if ($format eq 'json') {
+        # Show some stats
+        my $data = JSON::XS->new->decode($content);
+        my $node_count = keys %{$data->{nodes}};
+        my $edge_count = @{$data->{edges}};
+        print "Graph contains $node_count nodes and $edge_count edges\n";
+    }
+}
+
+# Print statistics
+sub print_stats {
+    my $stats = shift;
+    
+    printf "Total articles: %d\n", $stats->{total_articles} || 0;
+    printf "Total links: %d\n", $stats->{total_links} || 0;
+    printf "Average links per article: %.1f\n", $stats->{avg_links_per_article} || 0;
+    
+    if ($stats->{articles_crawled}) {
+        printf "Articles crawled: %d\n", $stats->{articles_crawled};
+        printf "Articles processed: %d\n", $stats->{articles_processed} || 0;
+        printf "Links analyzed: %d\n", $stats->{links_analyzed} || 0;
+        
+        if ($stats->{duration}) {
+            printf "Duration: %.1f seconds\n", $stats->{duration};
+            printf "Rate: %.2f articles/second\n", 
+                   ($stats->{articles_crawled} || 0) / $stats->{duration};
+        }
+    }
+}
+
+# Save output to file
+sub save_output {
+    my ($data, $filename, $format) = @_;
+    
+    if ($format eq 'json') {
+        my $json = JSON::XS->new->utf8->pretty;
+        open my $fh, '>', $filename or die "Cannot open $filename: $!";
+        print $fh $json->encode($data);
+        close $fh;
+    } else {
+        die "Unsupported output format: $format\n";
+    }
+}
+
+__END__
+
+=head1 NAME
+
+wikicrawler - Personal Wikipedia Knowledge Graph Builder
+
+=head1 SYNOPSIS
+
+wikicrawler [options]
+
+=head1 DESCRIPTION
+
+WikiCrawler is a tool for building personalized knowledge graphs from Wikipedia.
+It crawls Wikipedia articles based on your interests and builds a graph of
+connected concepts.
+
+=head1 OPTIONS
+
+=head2 Crawling Options
+
+=over 4
+
+=item B<--start-url, -u URL>
+
+Start crawling from the specified Wikipedia URL.
+
+=item B<--start-title, -t TITLE>
+
+Start crawling from the Wikipedia article with the specified title.
+
+=item B<--interests, -i INTEREST>
+
+Specify interests for filtering relevant articles. Can be used multiple times.
+Example: --interests "machine learning" --interests "algorithms"
+
+=item B<--max-depth, -d N>
+
+Maximum link depth to follow (default: 3).
+
+=item B<--max-articles, -a N>
+
+Maximum number of articles to crawl (default: 100).
+
+=item B<--min-relevance, -r SCORE>
+
+Minimum relevance score for including links (0.0-1.0, default: 0.3).
+
+=back
+
+=head2 Output Options
+
+=over 4
+
+=item B<--output, -o FILENAME>
+
+Save crawling results to the specified file.
+
+=item B<--format, -f FORMAT>
+
+Output format: json, graphml, dot (default: json).
+
+=item B<--export-graph, -g FILENAME>
+
+Export knowledge graph to file. Format determined by extension.
+
+=back
+
+=head2 Query Options
+
+=over 4
+
+=item B<--search, -s QUERY>
+
+Search for articles containing the query terms.
+
+=item B<--stats>
+
+Show database statistics.
+
+=item B<--cleanup DAYS>
+
+Clean up articles older than specified days.
+
+=back
+
+=head2 General Options
+
+=over 4
+
+=item B<--config, -c FILENAME>
+
+Use specified configuration file (default: config/crawler.yaml).
+
+=item B<--verbose, -v>
+
+Enable verbose output.
+
+=item B<--help, -h>
+
+Show help message.
+
+=item B<--man>
+
+Show full manual page.
+
+=back
+
+=head1 EXAMPLES
+
+Start crawling from "Artificial Intelligence" with interests:
+
+    wikicrawler --start-title "Artificial Intelligence" \
+                --interests "machine learning" \
+                --interests "algorithms" \
+                --max-articles 50
+
+Search for articles about programming:
+
+    wikicrawler --search "programming"
+
+Export knowledge graph:
+
+    wikicrawler --export-graph knowledge_graph.json
+
+Show statistics:
+
+    wikicrawler --stats
+
+Clean up old data:
+
+    wikicrawler --cleanup 30
+
+=head1 FILES
+
+=over 4
+
+=item F<config/crawler.yaml>
+
+Main configuration file containing crawler settings, interests, and database configuration.
+
+=item F<data/wiki_knowledge.db>
+
+SQLite database storing articles and link relationships.
+
+=item F<logs/wikicrawler.log>
+
+Application log file.
+
+=back
+
+=head1 AUTHOR
+
+WikiCrawler Project
+
+=head1 SEE ALSO
+
+L<WikiCrawler>, L<script/api_server.pl>
+
+=cut

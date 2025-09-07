@@ -1,0 +1,43 @@
+{
+  "timestamp": "2025-09-06 19:40:39",
+  "r_version": "R version 4.5.1 (2025-06-13)",
+  "test_results": {
+    "results": {
+      "test_graph_analysis.R": {
+        "success": true,
+        "errors": {},
+        "warnings": {},
+        "execution_time": 0.766
+      },
+      "test_integration.R": {
+        "success": true,
+        "errors": {},
+        "warnings": {},
+        "execution_time": 1.2958
+      },
+      "test_layout_algorithms.R": {
+        "success": true,
+        "errors": {},
+        "warnings": {},
+        "execution_time": 0.936
+      },
+      "test_temporal_analysis.R": {
+        "success": true,
+        "errors": {},
+        "warnings": {},
+        "execution_time": 0.7946
+      }
+    },
+    "total_time": 3.7923,
+    "passed_tests": 4,
+    "failed_tests": 0,
+    "total_tests": 4
+  },
+  "coverage_info": {},
+  "summary": {
+    "total_tests": 4,
+    "passed_tests": 4,
+    "failed_tests": 0,
+    "total_execution_time": 3.7923
+  }
+}

@@ -1,0 +1,105 @@
+/* Components Global Styles */
+/* Shared component utilities specific to this module */
+
+/* Modern button variants using direct CSS instead of @apply */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 2.5rem;
+  padding: 0 1rem;
+  background: oklch(var(--color-primary));
+  color: oklch(var(--color-primary-foreground));
+  border: none;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: oklch(var(--color-primary) / 0.9);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px oklch(var(--color-primary) / 0.3);
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px oklch(var(--color-background)),
+    0 0 0 4px oklch(var(--color-ring));
+}
+
+.btn-primary:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 2.5rem;
+  padding: 0 1rem;
+  background: oklch(var(--color-secondary));
+  color: oklch(var(--color-secondary-foreground));
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: oklch(var(--color-secondary) / 0.8);
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 2.5rem;
+  padding: 0 1rem;
+  background: transparent;
+  color: oklch(var(--color-foreground));
+  border: 1px solid oklch(var(--color-border));
+  cursor: pointer;
+}
+
+.btn-outline:hover {
+  background: oklch(var(--color-accent));
+  color: oklch(var(--color-accent-foreground));
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 2.5rem;
+  padding: 0 1rem;
+  background: transparent;
+  color: oklch(var(--color-foreground));
+  border: none;
+  cursor: pointer;
+}
+
+.btn-ghost:hover {
+  background: oklch(var(--color-accent));
+  color: oklch(var(--color-accent-foreground));
+}

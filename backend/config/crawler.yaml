@@ -1,0 +1,57 @@
+---
+# WikiCrawler Configuration
+
+# Crawler settings
+crawler:
+  user_agent: "WikiCrawler/1.0 (Personal Knowledge Graph Builder)"
+  delay_between_requests: 1  # seconds
+  max_requests_per_minute: 30
+  timeout: 30
+  max_redirects: 5
+
+# Wikipedia settings
+wikipedia:
+  base_url: "https://en.wikipedia.org"
+  api_url: "https://en.wikipedia.org/w/api.php"
+  max_depth: 3
+  max_articles_per_session: 100
+
+# Interest matching
+interests:
+  # These can be overridden via command line
+  default: 
+    - "artificial intelligence"
+    - "machine learning" 
+    - "computer science"
+    - "technology"
+  # Minimum relevance score (0-1) - Lower for more exploratory crawling
+  min_relevance: 0.1
+  # Keywords that boost relevance
+  boost_keywords:
+    - "algorithm"
+    - "programming" 
+    - "software"
+    - "data"
+
+# Database
+database:
+  path: "data/wiki_knowledge.db"
+  connection_pool_size: 5
+  
+# Logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARN, ERROR
+  file: "logs/wikicrawler.log"
+  max_size: "10MB"
+  
+# Cache settings  
+cache:
+  enabled: true
+  ttl: 3600  # 1 hour in seconds
+  max_size: 1000  # max cached pages
+
+# API Server
+api:
+  host: "localhost" 
+  port: 3000
+  cors_enabled: true

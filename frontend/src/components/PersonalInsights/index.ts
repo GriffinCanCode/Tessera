@@ -1,0 +1,1 @@
+export { PersonalInsights } from './PersonalInsights';
